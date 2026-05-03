@@ -255,11 +255,26 @@ async function fetchOverpassData(type, isDuty) {
     // or try opening_hours=24/7 if we want to be strict.
     // Given the limits of OpenStreetMap for Turkish duty pharmacies, we query all pharmacies.
     
+    let queryBody = "";
+    if (type === 'atm') {
+        // ATM'ler için hem müstakil ATM'leri hem de ATM'si olan bankaları arıyoruz
+        queryBody = `
+          node["amenity"="atm"](around:${radius},${userLocation.lat},${userLocation.lng});
+          way["amenity"="atm"](around:${radius},${userLocation.lat},${userLocation.lng});
+          node["amenity"="bank"]["atm"="yes"](around:${radius},${userLocation.lat},${userLocation.lng});
+          way["amenity"="bank"]["atm"="yes"](around:${radius},${userLocation.lat},${userLocation.lng});
+        `;
+    } else {
+        queryBody = `
+          node${queryTag}(around:${radius},${userLocation.lat},${userLocation.lng});
+          way${queryTag}(around:${radius},${userLocation.lat},${userLocation.lng});
+        `;
+    }
+
     const query = `
         [out:json][timeout:25];
         (
-          node${queryTag}(around:${radius},${userLocation.lat},${userLocation.lng});
-          way${queryTag}(around:${radius},${userLocation.lat},${userLocation.lng});
+${queryBody}
         );
         out center;
     `;
