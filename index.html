@@ -69,8 +69,9 @@
             <div class="flex items-center justify-start gap-2 text-sm text-gray-500 font-medium" id="location-panel">
                 <i class="fa-solid fa-location-dot"></i>
                 <span class="font-normal text-gray-400">Şu an buradasınız:</span>
-                <span id="location-text" class="text-gray-700">Konum aranıyor...</span>
-                <i class="fa-solid fa-rotate-right ml-1 cursor-pointer hover:text-gray-800 transition-colors" id="refresh-location"></i>
+                <span id="location-text" class="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors font-semibold" title="Konumu değiştirmek için tıklayın">Konum aranıyor...</span>
+                <i class="fa-solid fa-pen ml-1 text-gray-400 cursor-pointer hover:text-blue-600 transition-colors text-xs" id="edit-location" title="Konumu Manuel Gir"></i>
+                <i class="fa-solid fa-rotate-right ml-2 cursor-pointer hover:text-gray-800 transition-colors" id="refresh-location" title="Konumu Yenile"></i>
                 <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse ml-1" id="location-ping" style="display: none;"></div>
             </div>
         </header>

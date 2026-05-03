@@ -14,6 +14,7 @@ if ('serviceWorker' in navigator) {
 const locationText = document.getElementById('location-text');
 const locationPing = document.getElementById('location-ping');
 const refreshLocationBtn = document.getElementById('refresh-location');
+const editLocationBtn = document.getElementById('edit-location');
 const shareLocationBtn = document.getElementById('btn-share-location');
 const categoryBtns = document.querySelectorAll('.category-btn');
 
@@ -36,6 +37,9 @@ refreshLocationBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     getLocation();
 });
+
+locationText.addEventListener('click', manualLocationPrompt);
+editLocationBtn.addEventListener('click', manualLocationPrompt);
 
 shareLocationBtn.addEventListener('click', () => {
     if (!userLocation) {
@@ -128,14 +132,14 @@ function getLocation() {
                     (err) => {
                         console.error("İkinci konum denemesi de başarısız:", err.message);
                         locationPing.style.display = 'none';
-                        locationText.innerText = "Konum bulunamadı (Yenile'ye basın)";
+                        locationText.innerText = "Bulunamadı (Tıklayıp elle girin)";
                         // DİKKAT: Ankara/Samsun gibi yanlış şehirlere atanmaması için otomatik IP fallback işlemini kaldırdık.
                         // Kullanıcının yenile butonuna basarak tekrar GPS/Ağ araması yapması daha güvenli.
                     },
-                    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                    { enableHighAccuracy: false, timeout: 15000, maximumAge: 1800000 } // 30 mins cache
                 );
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 } // 5 mins cache
         );
     } else {
         getIpLocationFallback();
@@ -202,6 +206,48 @@ async function reverseGeocode(lat, lng, isFallback = false) {
     } catch (error) {
         console.error("Reverse geocoding error:", error);
         locationText.innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}` + (isFallback ? " (Tahmini Ağ Konumu)" : "");
+    } finally {
+        locationPing.style.display = 'none';
+    }
+}
+
+// Manual Location Search
+function manualLocationPrompt() {
+    const query = prompt("Otomatik konumda sorun yaşıyorsanız:\nLütfen bulunduğunuz semti, ilçeyi veya şehri yazın (Örn: Kadıköy, İstanbul veya Merkez, Tokat):");
+    if (query && query.trim() !== "") {
+        searchLocationByText(query.trim());
+    }
+}
+
+async function searchLocationByText(query) {
+    locationText.innerText = "Konum aranıyor...";
+    locationPing.style.display = 'block';
+    
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Türkiye')}&limit=1`, {
+            headers: {
+                'Accept-Language': 'tr'
+            }
+        });
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            userLocation = {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon)
+            };
+            
+            currentAddress = data[0].display_name;
+            const nameParts = currentAddress.split(',');
+            // Show first two parts
+            locationText.innerText = (nameParts[0] + (nameParts[1] ? "," + nameParts[1] : "")) + " (Manuel)";
+        } else {
+            alert("Girdiğiniz konum bulunamadı. Lütfen daha bilindik bir ilçe/il adı girin.");
+            locationText.innerText = "Bulunamadı (Tıklayıp girin)";
+        }
+    } catch (error) {
+        console.error("Manuel konum arama hatası:", error);
+        locationText.innerText = "Arama hatası";
     } finally {
         locationPing.style.display = 'none';
     }
