@@ -1,0 +1,16 @@
+{
+  "name": "Konum Asistanı",
+  "short_name": "Konum Asistanı",
+  "description": "Yakınınızdaki temel ihtiyaç noktalarını bulmanızı sağlayan asistan.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "icon.ico",
+      "sizes": "192x192 512x512",
+      "type": "image/x-icon"
+    }
+  ]
+}
