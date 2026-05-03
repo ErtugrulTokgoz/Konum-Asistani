@@ -3,11 +3,21 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./service-worker.js')
             .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                console.log('ServiceWorker registration successful');
             })
             .catch(err => {
                 console.log('ServiceWorker registration failed: ', err);
             });
+    });
+
+    // Arka planda yeni bir güncelleme geldiğinde (service worker değiştiğinde) 
+    // kullanıcıya sormadan sayfayı otomatik yenileyerek güncel versiyonu yükle.
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+        }
     });
 }
 

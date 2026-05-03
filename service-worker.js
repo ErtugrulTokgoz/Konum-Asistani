@@ -1,4 +1,4 @@
-const CACHE_NAME = 'konum-asistani-v2';
+const CACHE_NAME = 'konum-asistani-v3';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
