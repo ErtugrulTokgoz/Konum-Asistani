@@ -117,9 +117,12 @@ function getLocation() {
             },
             (error) => {
                 console.warn("Tarayıcı konumu başarısız:", error.message);
+                if (error.code === error.PERMISSION_DENIED) {
+                    alert("Konum izni reddedildi. Doğru sonuçlar için lütfen tarayıcı ayarlarından (adres çubuğundaki kilit simgesinden) konum erişimine izin verin. Şimdilik tahmini ağ konumu kullanılıyor...");
+                }
                 getIpLocationFallback();
             },
-            { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     } else {
         getIpLocationFallback();
@@ -138,9 +141,13 @@ async function getIpLocationFallback() {
                 lng: parseFloat(data.longitude)
             };
             currentAddress = `${data.city || 'Bilinmeyen Şehir'}, ${data.region || ''}`;
-            locationText.innerText = currentAddress;
+            locationText.innerText = currentAddress + " (Tahmini)";
+            
+            // Eğer daha önce uyarılmadıysa kullanıcıyı uyaralım (sayfa her yenilendiğinde tekrar çıkabilir, bu yüzden isterseniz localStorage ile de sınırlandırılabilir, ancak şimdilik net bilgi vermek için doğrudan alert veriyoruz)
+            alert("Cihazınızın tam GPS konumu alınamadı (İzin verilmemiş veya sinyal zayıf). İnternet sağlayıcınızın merkezi baz alınarak tahmini bir ağ konumu gösteriliyor. Sonuçlar yaşadığınız şehirden farklı (Örn: Ankara, Samsun vb.) olabilir.");
+            
             // Get better address translation if possible, but save API limits
-            reverseGeocode(userLocation.lat, userLocation.lng); 
+            reverseGeocode(userLocation.lat, userLocation.lng, true); 
         } else {
             throw new Error("Ağ verisi geçersiz");
         }
@@ -151,7 +158,7 @@ async function getIpLocationFallback() {
     }
 }
 
-async function reverseGeocode(lat, lng) {
+async function reverseGeocode(lat, lng, isFallback = false) {
     try {
         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`, {
             headers: {
@@ -167,13 +174,13 @@ async function reverseGeocode(lat, lng) {
                 .filter(Boolean)
                 .join(', ');
                 
-            locationText.innerText = shortAddress || currentAddress;
+            locationText.innerText = (shortAddress || currentAddress) + (isFallback ? " (Tahmini Ağ Konumu)" : "");
         } else {
-            locationText.innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            locationText.innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}` + (isFallback ? " (Tahmini Ağ Konumu)" : "");
         }
     } catch (error) {
         console.error("Reverse geocoding error:", error);
-        locationText.innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        locationText.innerText = `${lat.toFixed(4)}, ${lng.toFixed(4)}` + (isFallback ? " (Tahmini Ağ Konumu)" : "");
     } finally {
         locationPing.style.display = 'none';
     }
