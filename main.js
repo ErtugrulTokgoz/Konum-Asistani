@@ -103,30 +103,51 @@ modalBackdrop.addEventListener('click', closeModal);
 
 // Geolocation
 function getLocation() {
-    locationText.innerText = "Konum aranıyor...";
+    locationText.innerText = "Konum aranıyor (GPS)...";
     locationPing.style.display = 'block';
     
     if (navigator.geolocation) {
+        // 1. Önce Yüksek Doğrulukla (GPS) aramayı deneyelim
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                userLocation = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                reverseGeocode(userLocation.lat, userLocation.lng);
-            },
+            (position) => handlePositionSuccess(position),
             (error) => {
-                console.warn("Tarayıcı konumu başarısız:", error.message);
+                console.warn("GPS konumu başarısız:", error.message);
+                
                 if (error.code === error.PERMISSION_DENIED) {
-                    alert("Konum izni reddedildi. Doğru sonuçlar için lütfen tarayıcı ayarlarından (adres çubuğundaki kilit simgesinden) konum erişimine izin verin. Şimdilik tahmini ağ konumu kullanılıyor...");
+                    alert("Konum izni reddedildi. Doğru sonuçlar için tarayıcı ayarlarından (adres çubuğundaki kilit simgesinden) izin verip sayfayı yenileyin.");
+                    locationPing.style.display = 'none';
+                    locationText.innerText = "Konum izni reddedildi";
+                    return;
                 }
-                getIpLocationFallback();
+                
+                // 2. GPS zaman aşımına uğrarsa (telefonlarda çok sık olur), 
+                // hücresel ağ/wifi (baz istasyonu) ile daha düşük doğrulukta ama hızlı bir arama yapalım.
+                locationText.innerText = "Ağ konumu aranıyor...";
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => handlePositionSuccess(pos),
+                    (err) => {
+                        console.error("İkinci konum denemesi de başarısız:", err.message);
+                        locationPing.style.display = 'none';
+                        locationText.innerText = "Konum bulunamadı (Yenile'ye basın)";
+                        // DİKKAT: Ankara/Samsun gibi yanlış şehirlere atanmaması için otomatik IP fallback işlemini kaldırdık.
+                        // Kullanıcının yenile butonuna basarak tekrar GPS/Ağ araması yapması daha güvenli.
+                    },
+                    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+                );
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     } else {
         getIpLocationFallback();
     }
+}
+
+function handlePositionSuccess(position) {
+    userLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+    };
+    reverseGeocode(userLocation.lat, userLocation.lng);
 }
 
 async function getIpLocationFallback() {
