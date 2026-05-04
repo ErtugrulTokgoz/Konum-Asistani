@@ -452,11 +452,17 @@ function renderResults(elements, type, isDuty) {
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${res.lat},${res.lon}`;
         
         let extraInfo = '';
+        const phone = res.tags?.phone || res.tags?.['contact:phone'];
+        const website = res.tags?.website || res.tags?.['contact:website'];
+
         if (res.tags?.opening_hours) {
-            extraInfo += `<span class="inline-block bg-gray-100 text-[11px] px-2 py-1 rounded-md text-gray-600 font-medium mr-2"><i class="fa-regular fa-clock"></i> ${res.tags.opening_hours}</span>`;
+            extraInfo += `<span class="inline-block bg-gray-100 text-[11px] px-2 py-1 rounded-md text-gray-600 font-medium mr-2 mb-1"><i class="fa-regular fa-clock"></i> ${res.tags.opening_hours}</span>`;
         }
-        if (res.tags?.phone) {
-            extraInfo += `<a href="tel:${res.tags.phone}" class="inline-block bg-green-50 text-[11px] px-2 py-1 rounded-md text-green-700 font-medium mr-2"><i class="fa-solid fa-phone"></i> ${res.tags.phone}</a>`;
+        if (phone) {
+            extraInfo += `<a href="tel:${phone}" class="inline-block bg-green-50 text-[11px] px-2 py-1 rounded-md text-green-700 font-medium mr-2 mb-1"><i class="fa-solid fa-phone"></i> ${phone}</a>`;
+        }
+        if (website) {
+            extraInfo += `<a href="${website}" target="_blank" class="inline-block bg-blue-50 text-[11px] px-2 py-1 rounded-md text-blue-700 font-medium mr-2 mb-1"><i class="fa-solid fa-globe"></i> Websitesi</a>`;
         }
 
         html += `
