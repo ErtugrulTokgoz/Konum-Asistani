@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#3b82f6">
-    <title>Konum Asistanı</title>
+    <title>YakınımdaNeVar?</title>
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icon.ico" type="image/x-icon">
     <!-- Tailwind CSS -->
@@ -33,9 +33,9 @@
     <style type="text/tailwindcss">
         @layer components {
             .category-btn {
-                @apply rounded-[28px] p-2 flex flex-col items-center justify-center gap-2 
+                @apply rounded-[28px] p-2 flex flex-col items-center justify-center gap-1.5 
                        transition-transform duration-200 active:scale-95 text-white 
-                       aspect-square w-full font-semibold text-[11px] sm:text-sm leading-tight text-center;
+                       aspect-square w-full font-semibold text-[10.5px] sm:text-sm leading-tight text-center;
             }
         }
         
@@ -64,79 +64,94 @@
         
         <!-- Header & Location -->
         <header class="text-left mb-8 pl-1">
-            <h1 class="text-3xl font-bold mb-3 text-[#111827]">Yakınımda Ne Var?</h1>
+            <h1 class="text-3xl font-extrabold mb-2 text-[#111827] tracking-tight">YakınımdaNeVar?</h1>
             
             <div class="flex items-center justify-start gap-2 text-sm text-gray-500 font-medium" id="location-panel">
-                <i class="fa-solid fa-location-dot"></i>
-                <span class="font-normal text-gray-400">Şu an buradasınız:</span>
-                <span id="location-text" class="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors font-semibold" title="Konumu değiştirmek için tıklayın">Konum aranıyor...</span>
-                <i class="fa-solid fa-pen ml-1 text-gray-400 cursor-pointer hover:text-blue-600 transition-colors text-xs" id="edit-location" title="Konumu Manuel Gir"></i>
-                <i class="fa-solid fa-rotate-right ml-2 cursor-pointer hover:text-gray-800 transition-colors" id="refresh-location" title="Konumu Yenile"></i>
+                <i class="fa-solid fa-location-dot text-blue-500"></i>
+                <span class="font-normal text-gray-400">Konumunuz:</span>
+                <span id="location-text" class="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors font-semibold truncate max-w-[200px]" title="Konumu değiştirmek için tıklayın">Konum aranıyor...</span>
+                <i class="fa-solid fa-pen ml-0.5 text-gray-400 cursor-pointer hover:text-blue-600 transition-colors text-[10px]" id="edit-location" title="Konumu Manuel Gir"></i>
+                <i class="fa-solid fa-rotate-right ml-1 cursor-pointer hover:text-gray-800 transition-colors text-xs" id="refresh-location" title="Konumu Yenile"></i>
                 <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse ml-1" id="location-ping" style="display: none;"></div>
             </div>
         </header>
 
-        <!-- 3x4 Grid -->
+        <!-- 3x5 Grid -->
         <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6 flex-1 content-start">
             <!-- 1. Nöbetçi Eczaneler -->
             <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]" data-type="pharmacy" data-duty="true">
-                <i class="fa-solid fa-capsules text-2xl mb-2"></i>
+                <i class="fa-solid fa-capsules text-2xl mb-1"></i>
                 <span>Nöbetçi<br>Eczaneler</span>
             </button>
             <!-- 2. En Yakın ATM -->
             <button class="category-btn bg-[#3b82f6] hover:bg-[#2563eb] shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]" data-type="atm">
-                <i class="fa-solid fa-money-bill-1-wave text-2xl mb-2"></i>
+                <i class="fa-solid fa-money-bill-1-wave text-2xl mb-1"></i>
                 <span>En Yakın<br>ATM</span>
             </button>
             <!-- 3. En Yakın Hastaneler -->
             <button class="category-btn bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_4px_14px_0_rgba(239,68,68,0.39)]" data-type="hospital">
-                <i class="fa-regular fa-hospital text-2xl mb-2"></i>
+                <i class="fa-regular fa-hospital text-2xl mb-1"></i>
                 <span>En Yakın<br>Hastaneler</span>
             </button>
-            <!-- 4. En Yakın Marketler -->
+            <!-- 4. Cafe & Restoranlar -->
+            <button class="category-btn bg-[#f43f5e] hover:bg-[#e11d48] shadow-[0_4px_14px_0_rgba(244,63,94,0.39)]" data-type="restaurant">
+                <i class="fa-solid fa-utensils text-2xl mb-1"></i>
+                <span>Cafe &<br>Restoranlar</span>
+            </button>
+            <!-- 5. En Yakın Marketler -->
             <button class="category-btn bg-[#2dd4bf] hover:bg-[#14b8a6] shadow-[0_4px_14px_0_rgba(20,184,166,0.39)]" data-type="supermarket">
-                <i class="fa-solid fa-bag-shopping text-2xl mb-2"></i>
+                <i class="fa-solid fa-bag-shopping text-2xl mb-1"></i>
                 <span>En Yakın<br>Marketler</span>
             </button>
-            <!-- 5. En Yakın Benzinlikler -->
+            <!-- 6. En Yakın Benzinlikler -->
             <button class="category-btn bg-[#eab308] hover:bg-[#ca8a04] shadow-[0_4px_14px_0_rgba(234,179,8,0.39)]" data-type="fuel">
-                <i class="fa-solid fa-gas-pump text-2xl mb-2"></i>
+                <i class="fa-solid fa-gas-pump text-2xl mb-1"></i>
                 <span>En Yakın<br>Benzinlikler</span>
             </button>
-            <!-- 6. En Yakın Otoparklar -->
+            <!-- 7. Giyim Mağazaları -->
+            <button class="category-btn bg-[#ec4899] hover:bg-[#db2777] shadow-[0_4px_14px_0_rgba(236,72,153,0.39)]" data-type="clothes">
+                <i class="fa-solid fa-shirt text-2xl mb-1"></i>
+                <span>Giyim<br>Mağazaları</span>
+            </button>
+            <!-- 8. En Yakın Otoparklar -->
             <button class="category-btn bg-[#8b5cf6] hover:bg-[#7c3aed] shadow-[0_4px_14px_0_rgba(139,92,246,0.39)]" data-type="parking">
-                <i class="fa-solid fa-circle-p text-2xl mb-2"></i>
+                <i class="fa-solid fa-parking text-2xl mb-1"></i>
                 <span>En Yakın<br>Otoparklar</span>
             </button>
-            <!-- 7. En Yakın Eczaneler -->
-            <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]" data-type="pharmacy">
-                <i class="fa-solid fa-capsules text-2xl mb-2"></i>
-                <span>En Yakın<br>Eczaneler</span>
+            <!-- 9. Taksi Durakları -->
+            <button class="category-btn bg-[#f59e0b] hover:bg-[#d97706] shadow-[0_4px_14px_0_rgba(245,158,11,0.39)]" data-type="taxi">
+                <i class="fa-solid fa-taxi text-2xl mb-1"></i>
+                <span>Taksi<br>Durakları</span>
             </button>
-            <!-- 8. En Yakın Oteller -->
+            <!-- 10. Turistik Yerler -->
+            <button class="category-btn bg-[#6366f1] hover:bg-[#4f46e5] shadow-[0_4px_14px_0_rgba(99,102,241,0.39)]" data-type="tourism">
+                <i class="fa-solid fa-camera-retro text-2xl mb-1"></i>
+                <span>Turistik<br>Yerler</span>
+            </button>
+            <!-- 11. En Yakın Oteller -->
             <button class="category-btn bg-[#0ea5e9] hover:bg-[#0284c7] shadow-[0_4px_14px_0_rgba(14,165,233,0.39)]" data-type="hotel">
-                <i class="fa-regular fa-building text-2xl mb-2"></i>
+                <i class="fa-regular fa-building text-2xl mb-1"></i>
                 <span>En Yakın<br>Oteller</span>
             </button>
-            <!-- 9. Kargo Şubeleri -->
+            <!-- 12. Kargo Şubeleri -->
             <button class="category-btn bg-[#f97316] hover:bg-[#ea580c] shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]" data-type="post_office">
-                <i class="fa-solid fa-truck-fast text-2xl mb-2"></i>
+                <i class="fa-solid fa-truck-fast text-2xl mb-1"></i>
                 <span>Kargo<br>Şubeleri</span>
             </button>
-            <!-- 10. Toplanma Alanları -->
-            <button class="category-btn bg-[#f59e0b] hover:bg-[#d97706] shadow-[0_4px_14px_0_rgba(245,158,11,0.39)]" data-type="assembly_point">
-                <i class="fa-solid fa-users text-2xl mb-2"></i>
+            <!-- 13. Toplanma Alanları -->
+            <button class="category-btn bg-[#10b981] hover:bg-[#059669] shadow-[0_4px_14px_0_rgba(16,185,129,0.39)]" data-type="assembly_point">
+                <i class="fa-solid fa-users text-2xl mb-1"></i>
                 <span>Toplanma<br>Alanları</span>
             </button>
-            <!-- 11. Polis Merkezi -->
-            <button class="category-btn bg-[#f97316] hover:bg-[#ea580c] shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]" data-type="police">
-                <i class="fa-solid fa-shield-halved text-2xl mb-2"></i>
+            <!-- 14. Polis Merkezi -->
+            <button class="category-btn bg-[#475569] hover:bg-[#334155] shadow-[0_4px_14px_0_rgba(71,85,105,0.39)]" data-type="police">
+                <i class="fa-solid fa-shield-halved text-2xl mb-1"></i>
                 <span>Polis<br>Merkezi</span>
             </button>
-            <!-- 12. İtfaiye -->
-            <button class="category-btn bg-[#f97316] hover:bg-[#ea580c] shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]" data-type="fire_station">
-                <i class="fa-solid fa-fire text-2xl mb-2"></i>
-                <span>İtfaiye</span>
+            <!-- 15. En Yakın Eczaneler -->
+            <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]" data-type="pharmacy">
+                <i class="fa-solid fa-capsules text-2xl mb-1"></i>
+                <span>En Yakın<br>Eczaneler</span>
             </button>
         </div>
 

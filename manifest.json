@@ -1,7 +1,7 @@
 {
-  "name": "Konum Asistanı",
-  "short_name": "Konum Asistanı",
-  "description": "Yakınınızdaki temel ihtiyaç noktalarını bulmanızı sağlayan asistan.",
+  "name": "YakınımdaNeVar?",
+  "short_name": "YakınımdaNeVar?",
+  "description": "Yakınınızdaki yerleri saniyeler içinde bulun.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8fafc",

@@ -300,8 +300,17 @@ async function fetchOverpassData(type, isDuty) {
         case 'police':
             queryTag = '["amenity"="police"]';
             break;
-        case 'fire_station':
-            queryTag = '["amenity"="fire_station"]';
+        case 'restaurant':
+            queryTag = '["amenity"~"restaurant|cafe|fast_food"]';
+            break;
+        case 'clothes':
+            queryTag = '["shop"="clothes"]';
+            break;
+        case 'tourism':
+            queryTag = '["tourism"~"attraction|museum|viewpoint"]';
+            break;
+        case 'taxi':
+            queryTag = '["amenity"="taxi"]';
             break;
         default:
             queryTag = `["amenity"="${type}"]`;
@@ -401,10 +410,18 @@ function deg2rad(deg) {
 
 function renderResults(elements, type, isDuty) {
     if (!elements || elements.length === 0) {
+        const googleMapsSearchUrl = `https://www.google.com/maps/search/${encodeURIComponent(modalTitle.innerText.trim())}/@${userLocation.lat},${userLocation.lng},15z`;
+        
         resultsContainer.innerHTML = `
-            <div class="text-center text-gray-400 py-10">
+            <div class="text-center text-gray-400 py-10 px-6">
                 <i class="fa-solid fa-folder-open text-4xl mb-4 text-gray-300"></i>
-                <p class="font-medium">Yakınınızda sonuç bulunamadı (15km yarıçap).</p>
+                <p class="font-medium mb-6">Yakınınızda sonuç bulunamadı (15km yarıçap).</p>
+                
+                <a href="${googleMapsSearchUrl}" target="_blank" class="w-full py-4 bg-white border-2 border-blue-500 text-blue-600 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:bg-blue-50 active:scale-[0.98]">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    Google Haritalar'da Ara
+                </a>
+                <p class="text-[11px] text-gray-400 mt-3 italic">Not: Overpass API'da kayıtlı olmayan yerleri Google Maps üzerinde bulabilirsiniz.</p>
             </div>
         `;
         return;
@@ -511,7 +528,7 @@ submitFeedbackBtn.addEventListener('click', () => {
     
     // Create mailto link
     const email = "ertugrultokgoz25@gmail.com";
-    const subject = encodeURIComponent("Konum Asistanı Geri Bildirim");
+    const subject = encodeURIComponent("YakınımdaNeVar? Geri Bildirim");
     const body = encodeURIComponent(text);
     const mailtoUrl = `mailto:${email}?subject=${subject}&body=${body}`;
     
