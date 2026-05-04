@@ -23,6 +23,36 @@
                 }
             }
         }
+        
+        window.handleModeSwitch = function(btn, mode) {
+            console.log("Dinamik Mod Değişimi:", mode);
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            modeBtns.forEach(b => b.classList.remove('active-mode'));
+            btn.classList.add('active-mode');
+            
+            // Logic to switch modes
+            const body = document.body;
+            body.className = body.className.replace(/emergency-mode|daily-mode|tourist-mode/g, '');
+            body.classList.add(mode + '-mode');
+            
+            const grid = document.getElementById('category-grid');
+            const emergencyActions = document.getElementById('emergency-actions');
+            const standardActions = document.getElementById('standard-actions');
+            
+            if (mode === 'emergency') {
+                grid.classList.add('emergency-mode');
+                emergencyActions.classList.remove('hidden');
+                standardActions.classList.add('hidden');
+            } else {
+                grid.classList.remove('emergency-mode');
+                emergencyActions.classList.add('hidden');
+                standardActions.classList.remove('hidden');
+            }
+        };
+
+        window.onload = () => {
+            // Placeholder for initialization
+        };
     </script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -46,7 +76,8 @@
             
             /* Night Mode */
             .night-mode { @apply bg-[#0f172a] text-slate-200; }
-            .night-mode header h1 { @apply text-white; }
+            .night-mode header h1 { @apply text-[#111827]; }
+            .night-mode #location-text { @apply text-slate-300; }
             .night-mode #mode-selector { @apply bg-slate-800; }
             .night-mode .mode-btn.active-mode { @apply bg-slate-700 text-blue-400; }
             .night-mode .category-btn { @apply shadow-none border border-white/5; }
@@ -77,7 +108,7 @@
         
         <!-- Header & Location -->
         <header class="text-left mb-8 pl-1">
-            <h1 class="text-3xl font-extrabold mb-2 text-[#111827] tracking-tight">YakınımdaNeVar?</h1>
+            <h1 class="text-3xl font-extrabold mb-2 tracking-tight" style="color: #111827 !important; display: block !important; opacity: 1 !important;">Yakınımda Ne Var?</h1>
             
             <div class="flex items-center justify-start gap-2 text-sm text-gray-500 font-medium" id="location-panel">
                 <i class="fa-solid fa-location-dot text-blue-500"></i>

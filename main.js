@@ -10,8 +10,6 @@ if ('serviceWorker' in navigator) {
             });
     });
 
-    // Arka planda yeni bir güncelleme geldiğinde (service worker değiştiğinde) 
-    // kullanıcıya sormadan sayfayı otomatik yenileyerek güncel versiyonu yükle.
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!refreshing) {
@@ -21,66 +19,38 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-const locationText = document.getElementById('location-text');
-const locationPing = document.getElementById('location-ping');
-const refreshLocationBtn = document.getElementById('refresh-location');
-const editLocationBtn = document.getElementById('edit-location');
-const shareLocationBtn = document.getElementById('btn-share-location');
-const smsLocationBtn = document.getElementById('btn-sms-location');
-const categoryBtns = document.querySelectorAll('.category-btn');
-const categoryGrid = document.getElementById('category-grid');
-const modeBtns = document.querySelectorAll('.mode-btn');
-const emergencyActions = document.getElementById('emergency-actions');
-const standardActions = document.getElementById('standard-actions');
-
-const modal = document.getElementById('results-modal');
-const modalBackdrop = document.getElementById('modal-backdrop');
-const modalContent = document.getElementById('modal-content');
-const closeModalBtn = document.getElementById('close-modal');
-const resultsContainer = document.getElementById('results-container');
-const modalTitle = document.getElementById('modal-title');
-
-let userLocation = null;
-let currentAddress = "";
-
 // Initialize
-document.addEventListener('DOMContentLoaded', () => {
+window.onload = () => {
     getLocation();
     checkAutoNightMode();
-});
+};
 
-function handleModeSwitch(btn, mode) {
-    console.log("Switching to mode:", mode);
+window.handleModeSwitch = function(btn, mode) {
+    console.log("Dinamik Mod Değişimi:", mode);
     const modeBtns = document.querySelectorAll('.mode-btn');
     modeBtns.forEach(b => b.classList.remove('active-mode'));
     btn.classList.add('active-mode');
     switchMode(mode);
-}
+};
 
 function checkAutoNightMode() {
     const hour = new Date().getHours();
     if (hour >= 22 || hour < 6) {
         document.body.classList.add('night-mode');
-        // Highlight specific buttons for night mode
-        categoryBtns.forEach(btn => {
-            const type = btn.dataset.type;
-            const isDuty = btn.dataset.duty === 'true';
-            if ((type === 'pharmacy' && isDuty) || type === 'taxi') {
-                btn.classList.add('ring-4', 'ring-yellow-400', 'ring-opacity-50', 'animate-pulse');
-                btn.style.order = "-1"; // Move to top
-            }
-        });
     } else {
         document.body.classList.remove('night-mode');
     }
 }
 
 function switchMode(mode) {
+    const emergencyActions = document.getElementById('emergency-actions');
+    const standardActions = document.getElementById('standard-actions');
+    const categoryBtns = document.querySelectorAll('.category-btn');
+
     document.body.classList.remove('emergency-mode');
     emergencyActions.classList.add('hidden');
     standardActions.classList.remove('hidden');
     
-    // Reset all buttons visibility
     categoryBtns.forEach(btn => {
         btn.classList.remove('hidden');
         btn.style.order = "0";
@@ -111,10 +81,26 @@ function switchMode(mode) {
                 btn.style.order = "99";
             }
         });
-    } else {
-        // Daily Mode - Default order (already 0)
     }
 }
+
+const locationText = document.getElementById('location-text');
+const locationPing = document.getElementById('location-ping');
+const refreshLocationBtn = document.getElementById('refresh-location');
+const editLocationBtn = document.getElementById('edit-location');
+const shareLocationBtn = document.getElementById('btn-share-location');
+const smsLocationBtn = document.getElementById('btn-sms-location');
+const categoryBtns = document.querySelectorAll('.category-btn');
+
+const modal = document.getElementById('results-modal');
+const modalBackdrop = document.getElementById('modal-backdrop');
+const modalContent = document.getElementById('modal-content');
+const closeModalBtn = document.getElementById('close-modal');
+const resultsContainer = document.getElementById('results-container');
+const modalTitle = document.getElementById('modal-title');
+
+let userLocation = null;
+let currentAddress = "";
 
 smsLocationBtn.addEventListener('click', () => {
     if (!userLocation) {
