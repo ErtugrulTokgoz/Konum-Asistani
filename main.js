@@ -289,39 +289,71 @@ function renderPlaces(items) {
 // --- MOD DEĞİŞTİRME ---
 function applyMode(mode) {
     currentMode = mode;
+
+    // Mod butonlarını güncelle
     var modes = ['daily', 'tourist', 'emergency'];
     for (var i = 0; i < modes.length; i++) {
-        var btn = document.getElementById('m-' + modes[i]);
-        if (btn) btn.className = 'mode-btn' + (modes[i] === mode ? ' active' : '');
+        var mBtn = document.getElementById('m-' + modes[i]);
+        if (mBtn) mBtn.className = 'mode-btn' + (modes[i] === mode ? ' active' : '');
     }
 
+    // Alt aksiyon alanlarını güncelle
     var emgDiv = document.getElementById('emg-actions');
     var stdDiv = document.getElementById('std-actions');
-    var catBtns = document.querySelectorAll('.cat-btn');
-
-    // Önce hepsini göster
-    for (var j = 0; j < catBtns.length; j++) {
-        catBtns[j].style.display = 'flex';
-        catBtns[j].style.order = '0';
-    }
-
     if (mode === 'emergency') {
         if (emgDiv) emgDiv.style.display = 'flex';
         if (stdDiv) stdDiv.style.display = 'none';
     } else {
         if (emgDiv) emgDiv.style.display = 'none';
         if (stdDiv) stdDiv.style.display = 'flex';
+    }
 
-        if (mode === 'tourist') {
-            var touristOrder = ['tourism', 'hotel', 'restaurant', 'taxi', 'pharmacy', 'post_office', 'atm'];
-            for (var k = 0; k < catBtns.length; k++) {
-                var onclick = catBtns[k].getAttribute('onclick') || '';
-                var match = onclick.match(/'([^']+)'/);
-                if (match) {
-                    var idx = touristOrder.indexOf(match[1]);
-                    catBtns[k].style.order = idx !== -1 ? String(idx + 1) : '99';
-                }
+    // Butonları filtrele ve sırala
+    filterButtons(mode);
+}
+
+function filterButtons(mode) {
+    var catBtns = document.querySelectorAll('.cat-btn');
+
+    // Acil Modu: sadece kritik kategoriler görünür
+    var EMERGENCY_VISIBLE = ['hospital', 'nobetci_eczane', 'police', 'assembly_point', 'pharmacy'];
+
+    // Turist Modu: bu kategoriler ilk sıraya gelir (önce görünür)
+    var TOURIST_PRIORITY = ['tourism', 'hotel', 'restaurant', 'taxi', 'post_office', 'atm', 'pharmacy'];
+
+    for (var i = 0; i < catBtns.length; i++) {
+        var btn = catBtns[i];
+        var type = btn.getAttribute('data-type') || '';
+
+        // Önce sıfırla
+        btn.style.display = 'flex';
+        btn.style.order = '50'; // varsayılan ortada
+        btn.style.opacity = '1';
+        btn.style.transform = '';
+
+        if (mode === 'emergency') {
+            if (EMERGENCY_VISIBLE.indexOf(type) !== -1) {
+                btn.style.display = 'flex';
+                btn.style.order = String(EMERGENCY_VISIBLE.indexOf(type));
+                btn.style.opacity = '1';
+            } else {
+                // Gizle
+                btn.style.display = 'none';
             }
+
+        } else if (mode === 'tourist') {
+            var tidx = TOURIST_PRIORITY.indexOf(type);
+            if (tidx !== -1) {
+                btn.style.order = String(tidx);      // önce
+            } else {
+                btn.style.order = String(50 + i);    // sona
+                btn.style.opacity = '0.55';          // soluk göster
+            }
+
+        } else {
+            // Günlük: varsayılan sıra (DOM sırası = order 50+i)
+            btn.style.order = String(i);
+            btn.style.opacity = '1';
         }
     }
 }
