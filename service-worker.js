@@ -1,42 +1,27 @@
-const CACHE_NAME = 'yakinnimda-ne-var-v110';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './main.js',
-  './style.css',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
-];
+// Her zaman ağdan al, eski cache'i sil
+const CACHE_NAME = 'yakinnimda-v200';
 
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
+self.addEventListener('install', function(e) {
+    self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+self.addEventListener('activate', function(e) {
+    e.waitUntil(
+        caches.keys().then(function(keys) {
+            return Promise.all(keys.map(function(key) {
+                return caches.delete(key);
+            }));
+        }).then(function() {
+            return self.clients.claim();
         })
-      );
-    }).then(() => self.clients.claim())
-  );
+    );
 });
 
-// "Network First" Stratejisi: Önce internetten en günceli çek, yoksa cache'e bak.
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+// Network-first: Her zaman internetten yeni dosyayı al
+self.addEventListener('fetch', function(e) {
+    e.respondWith(
+        fetch(e.request).catch(function() {
+            return caches.match(e.request);
+        })
+    );
 });

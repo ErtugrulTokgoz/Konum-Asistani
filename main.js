@@ -1,240 +1,306 @@
-// Service Worker
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js').catch(console.error);
-}
+/* ===== YAKИНIMDA NE VAR? - main.js ===== */
+'use strict';
 
-// Global Durum
-let userLocation = null;
+// --- Global State ---
+var lat = null;
+var lng = null;
+var currentMode = 'daily';
 
-// Sayfa Hazır
-window.onload = function() {
-    getLocation();
-};
+// --- Sayfa Hazır ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./service-worker.js').catch(function(e) {
+            console.warn('SW kayıt hatası:', e);
+        });
+    }
 
-// KONUM BULMA
-function getLocation() {
-    var locText = document.getElementById('location-text');
-    if (!locText) return;
-    locText.innerText = 'Konum aranıyor...';
+    // Konum al
+    startLocation();
+
+    // loc-text tıklaması
+    var locEl = document.getElementById('loc-text');
+    if (locEl) {
+        locEl.addEventListener('click', function() {
+            manualLocation();
+        });
+    }
+});
+
+// --- KONUM ALMA ---
+function startLocation() {
+    setLocText('Konum aranıyor...');
+    lat = null; lng = null;
 
     if (!navigator.geolocation) {
-        locText.innerText = 'Konum desteklenmiyor';
+        setLocText('GPS desteklenmiyor (tıkla)');
         return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-        function(pos) {
-            userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-            getAddress(userLocation.lat, userLocation.lng);
-        },
-        function(err) {
-            // GPS başarısız, IP ile dene
-            fetch('https://get.geojs.io/v1/ip/geo.json')
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data && data.latitude) {
-                        userLocation = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
-                        locText.innerText = (data.city || 'Tahmini Konum') + ' (Ağ)';
-                    } else {
-                        locText.innerText = 'Konum alınamadı (Tıkla)';
-                    }
-                })
-                .catch(function() {
-                    locText.innerText = 'Konum alınamadı (Tıkla)';
-                });
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
+    try {
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                lat = pos.coords.latitude;
+                lng = pos.coords.longitude;
+                reverseGeocode(lat, lng);
+            },
+            function(err) {
+                console.warn('GPS hatası:', err.code, err.message);
+                tryIpLocation();
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+        );
+    } catch(e) {
+        console.error('Geolocation exception:', e);
+        tryIpLocation();
+    }
 }
 
-function getAddress(lat, lng) {
-    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1', {
-        headers: { 'Accept-Language': 'tr' }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        var locText = document.getElementById('location-text');
-        if (data && data.address) {
-            var addr = data.address;
-            var parts = [addr.road, addr.suburb, addr.city || addr.town].filter(Boolean);
-            locText.innerText = parts.join(', ') || 'Konum Alındı';
-        }
-    })
-    .catch(function() {
-        document.getElementById('location-text').innerText = lat.toFixed(3) + ', ' + lng.toFixed(3);
-    });
-}
-
-// MANUEL KONUM
-function manualLocationPrompt() {
-    var q = prompt('Bulunduğunuz ilçe veya semt:');
-    if (!q) return;
-    var locText = document.getElementById('location-text');
-    locText.innerText = 'Aranıyor...';
-    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ', Türkiye') + '&limit=1')
+function tryIpLocation() {
+    setLocText('Ağ konumu aranıyor...');
+    fetch('https://get.geojs.io/v1/ip/geo.json')
         .then(function(r) { return r.json(); })
         .then(function(d) {
-            if (d && d.length > 0) {
-                userLocation = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
-                locText.innerText = q + ' (Manuel)';
+            if (d && d.latitude && d.longitude) {
+                lat = parseFloat(d.latitude);
+                lng = parseFloat(d.longitude);
+                setLocText((d.city || 'Tahmini Konum') + ' (Ağ)');
             } else {
-                alert('Konum bulunamadı.');
-                locText.innerText = 'Bulunamadı (Tekrar tıkla)';
+                setLocText('Konum alınamadı — tıkla');
             }
+        })
+        .catch(function() {
+            setLocText('Konum alınamadı — tıkla');
         });
 }
 
-// KATEGORİ ARAMA - Her buton bu fonksiyonu çağırıyor
-function searchCategory(type, isDuty) {
-    // Nöbetçi eczane özel durumu
+function reverseGeocode(la, lo) {
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + la + '&lon=' + lo + '&zoom=18&addressdetails=1', {
+        headers: { 'Accept-Language': 'tr' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d && d.address) {
+            var a = d.address;
+            var parts = [];
+            if (a.road) parts.push(a.road);
+            if (a.suburb) parts.push(a.suburb);
+            if (a.city || a.town) parts.push(a.city || a.town);
+            setLocText(parts.join(', ') || 'Konum Alındı');
+        } else {
+            setLocText(la.toFixed(3) + ', ' + lo.toFixed(3));
+        }
+    })
+    .catch(function() {
+        setLocText(la.toFixed(3) + ', ' + lo.toFixed(3));
+    });
+}
+
+function setLocText(text) {
+    var el = document.getElementById('loc-text');
+    if (el) el.innerText = text;
+}
+
+function manualLocation() {
+    var q = prompt('İlçe veya semt adı girin:');
+    if (!q || !q.trim()) return;
+    setLocText('Aranıyor...');
+    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q.trim() + ', Türkiye') + '&limit=1')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d && d.length > 0) {
+                lat = parseFloat(d[0].lat);
+                lng = parseFloat(d[0].lon);
+                setLocText(q.trim() + ' (Manuel)');
+            } else {
+                alert('Konum bulunamadı. Başka bir ad deneyin.');
+                setLocText('Konum bulunamadı — tıkla');
+            }
+        })
+        .catch(function() { setLocText('Hata — tekrar dene'); });
+}
+
+// --- KATEGORİ BUTON TIKLAMA ---
+function catClick(type, isDuty) {
+    console.log('catClick:', type, isDuty);
+
+    // Nöbetçi eczane → dış link
     if (isDuty) {
         window.open('https://www.eczaneler.gen.tr/', '_blank');
         return;
     }
 
-    // Konum var mı kontrol et
-    if (!userLocation) {
-        alert('Konum henüz belirlenmedi. Lütfen bekleyin veya konumu manuel girin.');
+    // Konum yok → uyar
+    if (lat === null || lng === null) {
+        alert('Konumunuz henüz belirlenmedi.\nLütfen birkaç saniye bekleyin veya konumu tıklayarak girin.');
         return;
     }
 
-    var modal = document.getElementById('results-modal');
-    var container = document.getElementById('results-container');
-    var title = document.getElementById('modal-title');
+    // Modal aç
+    openModal(type);
+}
 
-    // Modal başlığını güncelle
-    var labels = {
-        'atm': 'En Yakın ATM',
-        'hospital': 'En Yakın Hastaneler',
-        'restaurant': 'Cafe & Restoranlar',
-        'supermarket': 'En Yakın Marketler',
-        'fuel': 'En Yakın Benzinlikler',
-        'clothes': 'Giyim Mağazaları',
-        'parking': 'En Yakın Otoparklar',
-        'taxi': 'Taksi Durakları',
-        'tourism': 'Turistik Yerler',
-        'hotel': 'En Yakın Oteller',
-        'post_office': 'Kargo Şubeleri',
-        'assembly_point': 'Toplanma Alanları',
-        'police': 'Polis Merkezi',
-        'pharmacy': 'En Yakın Eczaneler'
-    };
+// --- MODAL ---
+var LABELS = {
+    atm: 'En Yakın ATM',
+    hospital: 'En Yakın Hastaneler',
+    restaurant: 'Cafe & Restoranlar',
+    supermarket: 'En Yakın Marketler',
+    fuel: 'En Yakın Benzinlikler',
+    clothes: 'Giyim Mağazaları',
+    parking: 'En Yakın Otoparklar',
+    taxi: 'Taksi Durakları',
+    tourism: 'Turistik Yerler',
+    hotel: 'En Yakın Oteller',
+    post_office: 'Kargo Şubeleri',
+    assembly_point: 'Toplanma Alanları',
+    police: 'Polis Merkezi',
+    pharmacy: 'En Yakın Eczaneler'
+};
 
-    title.innerHTML = '<i class="fa-solid fa-map-location-dot" style="color:#3b82f6;"></i> ' + (labels[type] || type);
-    container.innerHTML = '<div style="padding:40px; text-align:center;"><span class="loader"></span><p style="color:#6b7280; margin-top:12px;">Aranıyor...</p></div>';
+function openModal(type) {
+    var modal = document.getElementById('result-modal');
+    var title = document.getElementById('result-title');
+    var list = document.getElementById('result-list');
+
+    if (!modal || !title || !list) { console.error('Modal elementleri bulunamadı!'); return; }
+
+    title.innerHTML = '<i class="fa-solid fa-map-location-dot" style="color:#3b82f6;"></i> ' + (LABELS[type] || type);
+    list.innerHTML = '<div style="text-align:center;padding:40px;"><span class="loader"></span><p style="color:#6b7280;margin-top:12px;font-size:13px;">Aranıyor...</p></div>';
     modal.style.display = 'flex';
 
-    // Overpass sorgu oluştur
-    var radius = 15000;
-    var queryBody = '';
+    fetchPlaces(type);
+}
+
+function closeModal() {
+    var modal = document.getElementById('result-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// --- OVERPASS API ---
+function fetchPlaces(type) {
+    var r = 15000;
+    var q = '';
 
     switch(type) {
         case 'atm':
-            queryBody = 'node["amenity"="atm"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');node["amenity"="bank"]["atm"="yes"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["amenity"="atm"](around:' + r + ',' + lat + ',' + lng + ');' +
+                'node["amenity"="bank"]["atm"="yes"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'restaurant':
-            queryBody = 'node["amenity"~"restaurant|cafe|fast_food"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["amenity"~"restaurant|cafe|fast_food"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'supermarket':
-            queryBody = 'node["shop"~"supermarket|convenience"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["shop"~"supermarket|convenience"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'clothes':
-            queryBody = 'node["shop"="clothes"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["shop"="clothes"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'tourism':
-            queryBody = 'node["tourism"~"attraction|museum|viewpoint"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["tourism"~"attraction|museum|viewpoint"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'hotel':
-            queryBody = 'node["tourism"="hotel"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["tourism"="hotel"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'post_office':
-            queryBody = 'node["amenity"="post_office"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["amenity"="post_office"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         case 'assembly_point':
-            queryBody = 'node["emergency"="assembly_point"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["emergency"="assembly_point"](around:' + r + ',' + lat + ',' + lng + ');';
             break;
         default:
-            queryBody = 'node["amenity"="' + type + '"](around:' + radius + ',' + userLocation.lat + ',' + userLocation.lng + ');';
+            q = 'node["amenity"="' + type + '"](around:' + r + ',' + lat + ',' + lng + ');';
     }
 
-    var query = '[out:json][timeout:25];(' + queryBody + ');out center;';
+    var fullQ = '[out:json][timeout:25];(' + q + ');out center;';
 
-    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            var elements = data.elements || [];
-            if (elements.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:40px; color:#9ca3af;">Yakınınızda sonuç bulunamadı.</p>';
-                return;
-            }
-            var html = '';
-            elements.forEach(function(el) {
-                var name = (el.tags && el.tags.name) ? el.tags.name : 'İsimsiz Yer';
-                var lat = el.lat || (el.center && el.center.lat);
-                var lon = el.lon || (el.center && el.center.lon);
-                var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + lat + ',' + lon;
-                html += '<div style="background:white; border:1px solid #e5e7eb; border-radius:16px; padding:16px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">' +
-                    '<span style="font-weight:700; color:#1f2937; font-size:13px; flex:1; margin-right:8px;">' + name + '</span>' +
-                    '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6; color:white; font-size:11px; font-weight:700; padding:8px 14px; border-radius:10px; text-decoration:none; white-space:nowrap;">Yol Tarifi</a>' +
-                    '</div>';
-            });
-            container.innerHTML = html;
+    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(fullQ))
+        .then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
         })
-        .catch(function() {
-            container.innerHTML = '<p style="text-align:center; padding:40px; color:#ef4444;">Sunucu hatası. Tekrar deneyin.</p>';
+        .then(function(data) {
+            renderPlaces(data.elements || []);
+        })
+        .catch(function(e) {
+            var list = document.getElementById('result-list');
+            if (list) list.innerHTML = '<p style="text-align:center;padding:30px;color:#ef4444;">Sunucuya bağlanılamadı.<br><small>' + e.message + '</small></p>';
         });
 }
 
-// MODAL KAPAT
-function closeModal() {
-    document.getElementById('results-modal').style.display = 'none';
+function renderPlaces(items) {
+    var list = document.getElementById('result-list');
+    if (!list) return;
+
+    if (!items || items.length === 0) {
+        list.innerHTML = '<p style="text-align:center;padding:30px;color:#9ca3af;">Yakınınızda sonuç bulunamadı.</p>';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < items.length; i++) {
+        var el = items[i];
+        var name = (el.tags && el.tags.name) ? el.tags.name : 'İsimsiz Yer';
+        var elat = el.lat || (el.center && el.center.lat) || '';
+        var elon = el.lon || (el.center && el.center.lon) || '';
+        var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + elat + ',' + elon;
+        html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+            '<span style="font-weight:700;color:#1f2937;font-size:13px;flex:1;">' + name + '</span>' +
+            '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6;color:white;font-size:11px;font-weight:700;padding:8px 12px;border-radius:10px;text-decoration:none;white-space:nowrap;">Yol Tarifi</a>' +
+            '</div>';
+    }
+    list.innerHTML = html;
 }
 
-// MOD DEĞİŞTİRME
-function switchMode(mode, btn) {
-    // Aktif buton stilini güncelle
-    document.querySelectorAll('.mode-btn').forEach(function(b) {
-        b.classList.remove('active-mode');
-    });
-    if (btn) btn.classList.add('active-mode');
+// --- MOD DEĞİŞTİRME ---
+function applyMode(mode) {
+    currentMode = mode;
+    var modes = ['daily', 'tourist', 'emergency'];
+    for (var i = 0; i < modes.length; i++) {
+        var btn = document.getElementById('m-' + modes[i]);
+        if (btn) btn.className = 'mode-btn' + (modes[i] === mode ? ' active' : '');
+    }
 
-    var emergencyActions = document.getElementById('emergency-actions');
-    var standardActions = document.getElementById('standard-actions');
-    var catBtns = document.querySelectorAll('.category-btn');
-    
-    document.body.classList.remove('emergency-mode');
-    emergencyActions.style.display = 'none';
-    standardActions.style.display = 'flex';
-    catBtns.forEach(function(b) {
-        b.style.display = 'flex';
-        b.style.order = '0';
-    });
+    var emgDiv = document.getElementById('emg-actions');
+    var stdDiv = document.getElementById('std-actions');
+    var catBtns = document.querySelectorAll('.cat-btn');
+
+    // Önce hepsini göster
+    for (var j = 0; j < catBtns.length; j++) {
+        catBtns[j].style.display = 'flex';
+        catBtns[j].style.order = '0';
+    }
 
     if (mode === 'emergency') {
-        document.body.classList.add('emergency-mode');
-        emergencyActions.style.display = 'flex';
-        standardActions.style.display = 'none';
-    } else if (mode === 'tourist') {
-        var order = ['tourism', 'hotel', 'restaurant', 'taxi', 'pharmacy', 'post_office', 'atm'];
-        catBtns.forEach(function(b) {
-            var type = b.getAttribute('onclick').match(/'([^']+)'/);
-            if (type) {
-                var idx = order.indexOf(type[1]);
-                b.style.order = idx !== -1 ? idx + 1 : 99;
+        if (emgDiv) emgDiv.style.display = 'flex';
+        if (stdDiv) stdDiv.style.display = 'none';
+    } else {
+        if (emgDiv) emgDiv.style.display = 'none';
+        if (stdDiv) stdDiv.style.display = 'flex';
+
+        if (mode === 'tourist') {
+            var touristOrder = ['tourism', 'hotel', 'restaurant', 'taxi', 'pharmacy', 'post_office', 'atm'];
+            for (var k = 0; k < catBtns.length; k++) {
+                var onclick = catBtns[k].getAttribute('onclick') || '';
+                var match = onclick.match(/'([^']+)'/);
+                if (match) {
+                    var idx = touristOrder.indexOf(match[1]);
+                    catBtns[k].style.order = idx !== -1 ? String(idx + 1) : '99';
+                }
             }
-        });
+        }
     }
 }
 
-// PAYLAŞIM
-function shareLocation() {
-    if (!userLocation) { alert('Konum henüz belirlenmedi.'); return; }
-    var url = 'https://www.google.com/maps?q=' + userLocation.lat + ',' + userLocation.lng;
+// --- PAYLAŞIM ---
+function shareWhatsApp() {
+    if (lat === null) { alert('Konum bulunamadı.'); return; }
+    var url = 'https://www.google.com/maps?q=' + lat + ',' + lng;
     window.open('https://wa.me/?text=' + encodeURIComponent('Güncel konumum: ' + url));
 }
 
 function sendSMS() {
-    if (!userLocation) { alert('Konum henüz belirlenmedi.'); return; }
-    var url = 'https://www.google.com/maps?q=' + userLocation.lat + ',' + userLocation.lng;
+    if (lat === null) { alert('Konum bulunamadı.'); return; }
+    var url = 'https://www.google.com/maps?q=' + lat + ',' + lng;
     window.open('sms:?body=' + encodeURIComponent('Acil! Konumum: ' + url));
 }
