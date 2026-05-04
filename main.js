@@ -223,42 +223,71 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// --- OVERPASS API ---
+// --- OVERPASS API (node + way + relation) ---
+function buildQuery(filter, r) {
+    // Her tip için node, way ve relation birlikte sorgulanır
+    return 'node' + filter + '(around:' + r + ',' + lat + ',' + lng + ');' +
+           'way'  + filter + '(around:' + r + ',' + lat + ',' + lng + ');' +
+           'rel'  + filter + '(around:' + r + ',' + lat + ',' + lng + ');';
+}
+
 function fetchPlaces(type) {
-    var r = 15000;
+    var r = 25000; // 25 km — küçük şehirler için yeterli
     var q = '';
 
     switch(type) {
         case 'atm':
-            q = 'node["amenity"="atm"](around:' + r + ',' + lat + ',' + lng + ');' +
-                'node["amenity"="bank"]["atm"="yes"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["amenity"="atm"]', r) +
+                buildQuery('["amenity"="bank"]["atm"="yes"]', r);
+            break;
+        case 'hospital':
+            q = buildQuery('["amenity"="hospital"]', r) +
+                buildQuery('["amenity"="clinic"]', r);
             break;
         case 'restaurant':
-            q = 'node["amenity"~"restaurant|cafe|fast_food"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["amenity"~"restaurant|cafe|fast_food|food_court"]', r);
             break;
         case 'supermarket':
-            q = 'node["shop"~"supermarket|convenience"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["shop"~"supermarket|convenience|grocery|mall"]', r);
             break;
         case 'clothes':
-            q = 'node["shop"="clothes"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["shop"~"clothes|fashion|boutique"]', r);
             break;
         case 'tourism':
-            q = 'node["tourism"~"attraction|museum|viewpoint"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["tourism"~"attraction|museum|viewpoint|gallery"]', r);
             break;
         case 'hotel':
-            q = 'node["tourism"="hotel"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["tourism"~"hotel|motel|hostel|guest_house"]', r);
             break;
         case 'post_office':
-            q = 'node["amenity"="post_office"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["amenity"="post_office"]', r) +
+                buildQuery('["shop"="copyshop"]', r);
             break;
         case 'assembly_point':
-            q = 'node["emergency"="assembly_point"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["emergency"="assembly_point"]', r) +
+                buildQuery('["amenity"="shelter"]', r);
+            break;
+        case 'police':
+            q = buildQuery('["amenity"="police"]', r);
+            break;
+        case 'pharmacy':
+            q = buildQuery('["amenity"="pharmacy"]', r);
+            break;
+        case 'fuel':
+            q = buildQuery('["amenity"="fuel"]', r);
+            break;
+        case 'parking':
+            q = buildQuery('["amenity"="parking"]', r);
+            break;
+        case 'taxi':
+            q = buildQuery('["amenity"="taxi"]', r);
             break;
         default:
-            q = 'node["amenity"="' + type + '"](around:' + r + ',' + lat + ',' + lng + ');';
+            q = buildQuery('["amenity"="' + type + '"]', r);
     }
 
-    var fullQ = '[out:json][timeout:25];(' + q + ');out center;';
+    var fullQ = '[out:json][timeout:30];(' + q + ');out center;';
+    var currentType = type; // closure için
 
     fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(fullQ))
         .then(function(res) {
@@ -266,20 +295,35 @@ function fetchPlaces(type) {
             return res.json();
         })
         .then(function(data) {
-            renderPlaces(data.elements || []);
+            renderPlaces(data.elements || [], currentType);
         })
         .catch(function(e) {
+            console.error('Overpass hatası:', e);
             var list = document.getElementById('result-list');
-            if (list) list.innerHTML = '<p style="text-align:center;padding:30px;color:#ef4444;">Sunucuya bağlanılamadı.<br><small>' + e.message + '</small></p>';
+            if (list) {
+                var searchTerm = LABELS[currentType] || currentType;
+                var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(searchTerm) + '/@' + lat + ',' + lng + ',14z';
+                list.innerHTML = '<div style="text-align:center;padding:30px;">' +
+                    '<p style="color:#ef4444;margin-bottom:12px;">Sunucuya bağlanılamadı.</p>' +
+                    '<a href="' + mapsSearch + '" target="_blank" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:700;font-size:13px;">Google Maps\'te Ara</a>' +
+                    '</div>';
+            }
         });
 }
 
-function renderPlaces(items) {
+function renderPlaces(items, type) {
     var list = document.getElementById('result-list');
     if (!list) return;
 
     if (!items || items.length === 0) {
-        list.innerHTML = '<p style="text-align:center;padding:30px;color:#9ca3af;">Yakınınızda sonuç bulunamadı.</p>';
+        // Sonuç yok — Google Maps fallback
+        var searchTerm = LABELS[type] || type;
+        var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(searchTerm) + '/@' + lat + ',' + lng + ',14z';
+        list.innerHTML = '<div style="text-align:center;padding:30px;">' +
+            '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">Yakınınızda OpenStreetMap\'te kayıtlı sonuç bulunamadı.</p>' +
+            '<a href="' + mapsSearch + '" target="_blank" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:700;font-size:13px;box-shadow:0 4px 12px rgba(59,130,246,.35);">' +
+            '<i class="fa-brands fa-google" style="margin-right:6px;"></i>Google Maps\'te Ara</a>' +
+            '</div>';
         return;
     }
 
@@ -289,14 +333,20 @@ function renderPlaces(items) {
         var name = (el.tags && el.tags.name) ? el.tags.name : 'İsimsiz Yer';
         var elat = el.lat || (el.center && el.center.lat) || '';
         var elon = el.lon || (el.center && el.center.lon) || '';
+        if (!elat || !elon) continue; // koordinatsız sonucu atla
         var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + elat + ',' + elon;
         html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
             '<span style="font-weight:700;color:#1f2937;font-size:13px;flex:1;">' + name + '</span>' +
             '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6;color:white;font-size:11px;font-weight:700;padding:8px 12px;border-radius:10px;text-decoration:none;white-space:nowrap;">Yol Tarifi</a>' +
             '</div>';
     }
-    list.innerHTML = html;
+    if (!html) {
+        list.innerHTML = '<p style="text-align:center;padding:30px;color:#9ca3af;">İsimli sonuç bulunamadı.</p>';
+    } else {
+        list.innerHTML = html;
+    }
 }
+
 
 // --- MOD DEĞİŞTİRME ---
 function applyMode(mode) {
