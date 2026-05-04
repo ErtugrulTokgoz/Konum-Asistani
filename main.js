@@ -25,18 +25,30 @@ function closeFeedbackIfBackdrop(e) {
 }
 
 function submitFeedback() {
-    var msg = document.getElementById('fb-message').value.trim();
+    var msg = (document.getElementById('fb-message').value || '').trim();
+    var topicEl = document.getElementById('fb-topic');
+    var topicLabels = { bug: 'Hata Bildirimi', suggestion: 'Öneri', other: 'Diğer' };
+    var topicVal = topicEl ? topicEl.value : 'other';
+    var topicText = topicLabels[topicVal] || topicVal;
+
     if (!msg) {
         alert('Lütfen bir mesaj yazın.');
         return;
     }
+
+    // mailto ile gönder
+    var subject = encodeURIComponent('YakınımdaNeVar? - ' + topicText);
+    var body = encodeURIComponent('Konu: ' + topicText + '\n\nMesaj:\n' + msg);
+    window.location.href = 'mailto:ertugrultokgoz25@gmail.com?subject=' + subject + '&body=' + body;
+
     closeFeedback();
-    // Teşekkür bildirimi
+
+    // Toast bildirimi
     var toast = document.createElement('div');
-    toast.innerText = '✅ Teşekkürler, bildiriminiz alındı!';
+    toast.innerText = '✅ Mail uygulaması açıldı!';
     toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
     document.body.appendChild(toast);
-    setTimeout(function() { document.body.removeChild(toast); }, 3000);
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
 }
 
 
@@ -315,43 +327,43 @@ function applyMode(mode) {
 function filterButtons(mode) {
     var catBtns = document.querySelectorAll('.cat-btn');
 
-    // Acil Modu: sadece kritik kategoriler görünür
-    var EMERGENCY_VISIBLE = ['hospital', 'nobetci_eczane', 'police', 'assembly_point', 'pharmacy'];
+    // Acil modunda sadece bu görünür (sıralı)
+    var EMERGENCY_ORDER = ['hospital', 'nobetci_eczane', 'police', 'assembly_point', 'pharmacy'];
 
-    // Turist Modu: bu kategoriler ilk sıraya gelir (önce görünür)
+    // Turist modunda öncelik sırası
     var TOURIST_PRIORITY = ['tourism', 'hotel', 'restaurant', 'taxi', 'post_office', 'atm', 'pharmacy'];
 
     for (var i = 0; i < catBtns.length; i++) {
         var btn = catBtns[i];
         var type = btn.getAttribute('data-type') || '';
 
-        // Önce sıfırla
+        // Her geçişte önce sıfırla
         btn.style.display = 'flex';
-        btn.style.order = '50'; // varsayılan ortada
         btn.style.opacity = '1';
-        btn.style.transform = '';
+        btn.style.order = String(i);
 
         if (mode === 'emergency') {
-            if (EMERGENCY_VISIBLE.indexOf(type) !== -1) {
+            var eIdx = EMERGENCY_ORDER.indexOf(type);
+            if (eIdx !== -1) {
                 btn.style.display = 'flex';
-                btn.style.order = String(EMERGENCY_VISIBLE.indexOf(type));
+                btn.style.order = String(eIdx - 10); // negatif = en başa
                 btn.style.opacity = '1';
             } else {
-                // Gizle
                 btn.style.display = 'none';
             }
 
         } else if (mode === 'tourist') {
-            var tidx = TOURIST_PRIORITY.indexOf(type);
-            if (tidx !== -1) {
-                btn.style.order = String(tidx);      // önce
+            var tIdx = TOURIST_PRIORITY.indexOf(type);
+            if (tIdx !== -1) {
+                btn.style.order = String(tIdx - 10); // negatif = en başa
+                btn.style.opacity = '1';
             } else {
-                btn.style.order = String(50 + i);    // sona
-                btn.style.opacity = '0.55';          // soluk göster
+                btn.style.order = String(50 + i);
+                btn.style.opacity = '0.5';
             }
 
         } else {
-            // Günlük: varsayılan sıra (DOM sırası = order 50+i)
+            // Günlük: DOM sırası
             btn.style.order = String(i);
             btn.style.opacity = '1';
         }
