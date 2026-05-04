@@ -74,10 +74,8 @@
             .emergency-mode .category-btn { @apply aspect-auto py-6 rounded-[32px] text-lg; }
             .emergency-mode #category-grid { @apply grid-cols-1 gap-4; }
             
-            /* Night Mode */
+            /* Night Mode Base */
             .night-mode { @apply bg-[#0f172a] text-slate-200; }
-            .night-mode header h1 { @apply text-[#111827]; }
-            .night-mode #location-text { @apply text-slate-300; }
             .night-mode #mode-selector { @apply bg-slate-800; }
             .night-mode .mode-btn.active-mode { @apply bg-slate-700 text-blue-400; }
             .night-mode .category-btn { @apply shadow-none border border-white/5; }
@@ -110,12 +108,12 @@
         <header class="text-left mb-8 pl-1">
             <h1 class="text-3xl font-extrabold mb-2 tracking-tight" style="color: #111827 !important; display: block !important; opacity: 1 !important;">Yakınımda Ne Var?</h1>
             
-            <div class="flex items-center justify-start gap-2 text-sm text-gray-500 font-medium" id="location-panel">
-                <i class="fa-solid fa-location-dot text-blue-500"></i>
-                <span class="font-normal text-gray-400">Konumunuz:</span>
-                <span id="location-text" class="text-gray-700 cursor-pointer hover:text-blue-600 transition-colors font-semibold truncate max-w-[200px]" title="Konumu değiştirmek için tıklayın">Konum aranıyor...</span>
-                <i class="fa-solid fa-pen ml-0.5 text-gray-400 cursor-pointer hover:text-blue-600 transition-colors text-[10px]" id="edit-location" title="Konumu Manuel Gir"></i>
-                <i class="fa-solid fa-rotate-right ml-1 cursor-pointer hover:text-gray-800 transition-colors text-xs" id="refresh-location" title="Konumu Yenile"></i>
+            <div class="flex items-center justify-start gap-2 text-sm font-bold" id="location-panel" style="color: #000000 !important; opacity: 1 !important;">
+                <i class="fa-solid fa-location-dot text-blue-600" style="opacity: 1 !important;"></i>
+                <span style="color: #000000 !important; opacity: 1 !important;">Konumunuz:</span>
+                <span id="location-text" class="truncate max-w-[200px]" style="color: #000000 !important; opacity: 1 !important; font-weight: 800 !important;">Konum aranıyor...</span>
+                <i class="fa-solid fa-pen ml-0.5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors text-[10px]" id="edit-location" title="Konumu Manuel Gir"></i>
+                <i class="fa-solid fa-rotate-right ml-1 cursor-pointer hover:text-gray-900 transition-colors text-xs" id="refresh-location" title="Konumu Yenile"></i>
                 <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse ml-1" id="location-ping" style="display: none;"></div>
             </div>
         </header>
