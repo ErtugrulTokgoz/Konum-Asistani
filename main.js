@@ -47,24 +47,15 @@ let currentAddress = "";
 document.addEventListener('DOMContentLoaded', () => {
     getLocation();
     checkAutoNightMode();
-    
-    // Mode selection (Safe initialization)
-    const modeBtns = document.querySelectorAll('.mode-btn');
-    modeBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            console.log("Mode clicked:", btn.dataset.mode);
-            modeBtns.forEach(b => b.classList.remove('active-mode'));
-            btn.classList.add('active-mode');
-            switchMode(btn.dataset.mode);
-        });
-    });
-
-    // Set initial mode
-    const currentHour = new Date().getHours();
-    if (currentHour >= 22 || currentHour < 6) {
-        switchMode('daily'); 
-    }
 });
+
+function handleModeSwitch(btn, mode) {
+    console.log("Switching to mode:", mode);
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach(b => b.classList.remove('active-mode'));
+    btn.classList.add('active-mode');
+    switchMode(mode);
+}
 
 function checkAutoNightMode() {
     const hour = new Date().getHours();

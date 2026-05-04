@@ -91,13 +91,13 @@
 
         <!-- Mode Selector -->
         <div class="flex bg-gray-100 p-1 rounded-2xl mb-6 shadow-inner relative z-10" id="mode-selector">
-            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn active-mode" data-mode="daily">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn active-mode" data-mode="daily" onclick="handleModeSwitch(this, 'daily')">
                 <i class="fa-solid fa-house-user mr-1"></i> Günlük
             </button>
-            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="tourist">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="tourist" onclick="handleModeSwitch(this, 'tourist')">
                 <i class="fa-solid fa-map-location-dot mr-1"></i> Turist
             </button>
-            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="emergency">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="emergency" onclick="handleModeSwitch(this, 'emergency')">
                 <i class="fa-solid fa-triangle-exclamation mr-1"></i> Acil
             </button>
         </div>
