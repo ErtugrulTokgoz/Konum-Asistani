@@ -11,7 +11,7 @@ let currentAddress = "";
 // Tüm kodları sayfa yüklendikten sonra çalışacak şekilde sarmalıyoruz (Beyaz ekranı önlemek için)
 window.onload = () => {
     console.log("Uygulama başlatılıyor...");
-    
+
     // Elementleri bul
     const locText = document.getElementById('location-text');
     const locPing = document.getElementById('location-ping');
@@ -96,7 +96,7 @@ window.onload = () => {
         if (type === 'supermarket') tags = '["shop"~"supermarket|convenience"]';
         if (type === 'restaurant') tags = '["amenity"~"restaurant|cafe"]';
         if (type === 'tourism') tags = '["tourism"~"attraction|museum"]';
-        
+
         const query = `[out:json][timeout:25];(node${tags}(around:${radius},${userLocation.lat},${userLocation.lng});way${tags}(around:${radius},${userLocation.lat},${userLocation.lng}););out center;`;
         try {
             const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
@@ -134,7 +134,7 @@ window.onload = () => {
             window.open(`sms:?body=${encodeURIComponent("Konumum: https://www.google.com/maps?q=" + userLocation.lat + "," + userLocation.lng)}`);
         };
     }
-    
+
     const btnShare = document.getElementById('btn-share-location');
     if (btnShare) {
         btnShare.onclick = () => {
@@ -147,7 +147,7 @@ window.onload = () => {
     locText.onclick = manualPrompt;
     const btnEdit = document.getElementById('edit-location');
     if (btnEdit) btnEdit.onclick = manualPrompt;
-    
+
     const btnRefresh = document.getElementById('refresh-location');
     if (btnRefresh) btnRefresh.onclick = getLocation;
 
@@ -168,11 +168,11 @@ window.onload = () => {
 };
 
 // Mod Değiştirme (Global Kapsamda Olmalı)
-window.handleModeSwitch = function(btn, mode) {
+window.handleModeSwitch = function (btn, mode) {
     const modeBtns = document.querySelectorAll('.mode-btn');
     modeBtns.forEach(b => b.classList.remove('active-mode'));
     btn.classList.add('active-mode');
-    
+
     const eActions = document.getElementById('emergency-actions');
     const sActions = document.getElementById('standard-actions');
     const catBtns = document.querySelectorAll('.category-btn');
@@ -204,3 +204,94 @@ window.handleModeSwitch = function(btn, mode) {
         });
     }
 };
+if (elements.length === 0) {
+    container.innerHTML = '<div class="text-center p-12 text-gray-500"><i class="fa-solid fa-face-frown text-4xl mb-4"></i><p>Yakınınızda sonuç bulunamadı.</p></div>';
+    return;
+}
+
+let html = '';
+elements.forEach(el => {
+    const name = el.tags?.name || "İsimsiz Yer";
+    const lat = el.lat || el.center.lat;
+    const lon = el.lon || el.center.lon;
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+
+    html += `
+            <div class="bg-white border border-gray-100 rounded-2xl p-4 mb-3 shadow-sm flex justify-between items-center animate-fadeIn">
+                <div class="flex flex-col">
+                    <h4 class="font-bold text-gray-800 text-sm mb-1">${name}</h4>
+                    <span class="text-[10px] text-gray-400 font-medium"><i class="fa-solid fa-map-pin mr-1"></i> OSM Verisi</span>
+                </div>
+                <a href="${mapsUrl}" target="_blank" class="bg-blue-600 text-white text-[10px] font-bold py-2 px-4 rounded-xl shadow-md active:scale-95 transition-transform">Tarif</a>
+            </div>
+        `;
+});
+container.innerHTML = html;
+}
+
+// 5. Mod ve Diğer İşlemler
+window.handleModeSwitch = function (btn, mode) {
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach(b => b.classList.remove('active-mode'));
+    btn.classList.add('active-mode');
+
+    const body = document.body;
+    body.classList.remove('emergency-mode');
+    document.getElementById('emergency-actions').classList.add('hidden');
+    document.getElementById('standard-actions').classList.remove('hidden');
+    document.querySelectorAll('.category-btn').forEach(b => {
+        b.classList.remove('hidden');
+        b.style.order = "0";
+    });
+
+    if (mode === 'emergency') {
+        body.classList.add('emergency-mode');
+        document.getElementById('emergency-actions').classList.remove('hidden');
+        document.getElementById('standard-actions').classList.add('hidden');
+        document.querySelectorAll('.category-btn').forEach(b => {
+            const type = b.dataset.type;
+            const isDuty = b.dataset.duty === 'true';
+            if (['hospital', 'police', 'assembly_point'].includes(type) || (type === 'pharmacy' && isDuty)) {
+                b.classList.remove('hidden');
+            } else {
+                b.classList.add('hidden');
+            }
+        });
+    } else if (mode === 'tourist') {
+        const touristOrder = ['tourism', 'hotel', 'restaurant', 'taxi', 'pharmacy', 'post_office', 'atm'];
+        document.querySelectorAll('.category-btn').forEach(b => {
+            const idx = touristOrder.indexOf(b.dataset.type);
+            b.style.order = idx !== -1 ? idx + 1 : "99";
+        });
+    }
+};
+
+// Modal Kapatma
+document.getElementById('close-modal').onclick = () => document.getElementById('results-modal').classList.add('hidden');
+document.getElementById('modal-backdrop').onclick = () => document.getElementById('results-modal').classList.add('hidden');
+
+// Konum Paylaşım (SMS & WhatsApp)
+document.getElementById('btn-sms-location').onclick = () => {
+    if (!userLocation) return;
+    window.open(`sms:?body=${encodeURIComponent("Acil Durum! Konumum: https://www.google.com/maps?q=" + userLocation.lat + "," + userLocation.lng)}`);
+};
+document.getElementById('btn-share-location').onclick = () => {
+    if (!userLocation) return;
+    window.open(`https://wa.me/?text=${encodeURIComponent("Güncel Konumum: https://www.google.com/maps?q=" + userLocation.lat + "," + userLocation.lng)}`);
+};
+
+document.getElementById('refresh-location').onclick = getLocation;
+document.getElementById('location-text').onclick = () => {
+    const q = prompt("Semt veya ilçe girin:");
+    if (q) {
+        document.getElementById('location-text').innerText = "Aranıyor...";
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ', Türkiye')}&limit=1`)
+            .then(r => r.json()).then(d => {
+                if (d.length > 0) {
+                    userLocation = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+                    document.getElementById('location-text').innerText = q + " (Manuel)";
+                }
+            });
+    }
+};
+document.getElementById('btn-bildir').onclick = () => window.location.href = "mailto:ertugrultokgoz25@gmail.com";

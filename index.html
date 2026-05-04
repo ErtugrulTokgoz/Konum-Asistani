@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,7 +29,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Custom CSS using Tailwind CDN support -->
     <style type="text/tailwindcss">
         @layer components {
@@ -70,159 +71,199 @@
         }
     </style>
 </head>
+
 <body class="bg-[#f8fafc] text-slate-800 min-h-screen relative font-sans antialiased">
-    
+
     <main class="max-w-[500px] mx-auto min-h-screen px-4 py-8 flex flex-col relative">
-        
+
         <!-- Header & Location -->
         <header class="text-left mb-8 pl-1">
-            <h1 class="text-3xl font-extrabold mb-2 tracking-tight" style="color: #111827 !important; display: block !important; opacity: 1 !important;">Yakınımda Ne Var?</h1>
-            
-            <div class="flex items-center justify-start gap-2 text-sm font-bold" id="location-panel" style="color: #000000 !important; opacity: 1 !important;">
+            <h1 class="text-3xl font-extrabold mb-2 tracking-tight"
+                style="color: #111827 !important; display: block !important; opacity: 1 !important;">Yakınımda Ne Var?
+            </h1>
+
+            <div class="flex items-center justify-start gap-2 text-sm font-bold" id="location-panel"
+                style="color: #000000 !important; opacity: 1 !important;">
                 <i class="fa-solid fa-location-dot text-blue-600" style="opacity: 1 !important;"></i>
                 <span style="color: #000000 !important; opacity: 1 !important;">Konumunuz:</span>
-                <span id="location-text" class="truncate max-w-[200px]" style="color: #000000 !important; opacity: 1 !important; font-weight: 800 !important;">Konum aranıyor...</span>
-                <i class="fa-solid fa-pen ml-0.5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors text-[10px]" id="edit-location" title="Konumu Manuel Gir"></i>
-                <i class="fa-solid fa-rotate-right ml-1 cursor-pointer hover:text-gray-900 transition-colors text-xs" id="refresh-location" title="Konumu Yenile"></i>
-                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse ml-1" id="location-ping" style="display: none;"></div>
+                <span id="location-text" class="truncate max-w-[200px]"
+                    style="color: #000000 !important; opacity: 1 !important; font-weight: 800 !important;">Konum
+                    aranıyor...</span>
+                <i class="fa-solid fa-pen ml-0.5 text-gray-500 cursor-pointer hover:text-blue-600 transition-colors text-[10px]"
+                    id="edit-location" title="Konumu Manuel Gir"></i>
+                <i class="fa-solid fa-rotate-right ml-1 cursor-pointer hover:text-gray-900 transition-colors text-xs"
+                    id="refresh-location" title="Konumu Yenile"></i>
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse ml-1" id="location-ping"
+                    style="display: none;"></div>
             </div>
         </header>
 
         <!-- Mode Selector -->
         <div class="flex bg-gray-100 p-1 rounded-2xl mb-6 shadow-inner relative z-10" id="mode-selector">
-            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn active-mode" data-mode="daily" onclick="handleModeSwitch(this, 'daily')">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn active-mode"
+                data-mode="daily" onclick="handleModeSwitch(this, 'daily')">
                 <i class="fa-solid fa-house-user mr-1"></i> Günlük
             </button>
-            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="tourist" onclick="handleModeSwitch(this, 'tourist')">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn"
+                data-mode="tourist" onclick="handleModeSwitch(this, 'tourist')">
                 <i class="fa-solid fa-map-location-dot mr-1"></i> Turist
             </button>
-            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="emergency" onclick="handleModeSwitch(this, 'emergency')">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn"
+                data-mode="emergency" onclick="handleModeSwitch(this, 'emergency')">
                 <i class="fa-solid fa-triangle-exclamation mr-1"></i> Acil
             </button>
         </div>
 
         <!-- 3x5 Grid -->
-        <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6 flex-1 content-start transition-all duration-500" id="category-grid">
+        <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6 flex-1 content-start transition-all duration-500"
+            id="category-grid">
             <!-- 1. Nöbetçi Eczaneler -->
-            <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]" data-type="pharmacy" data-duty="true">
+            <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]"
+                data-type="pharmacy" data-duty="true">
                 <i class="fa-solid fa-capsules text-2xl mb-1"></i>
                 <span>Nöbetçi<br>Eczaneler</span>
             </button>
             <!-- 2. En Yakın ATM -->
-            <button class="category-btn bg-[#3b82f6] hover:bg-[#2563eb] shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]" data-type="atm">
+            <button class="category-btn bg-[#3b82f6] hover:bg-[#2563eb] shadow-[0_4px_14px_0_rgba(59,130,246,0.39)]"
+                data-type="atm">
                 <i class="fa-solid fa-money-bill-1-wave text-2xl mb-1"></i>
                 <span>En Yakın<br>ATM</span>
             </button>
             <!-- 3. En Yakın Hastaneler -->
-            <button class="category-btn bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_4px_14px_0_rgba(239,68,68,0.39)]" data-type="hospital">
+            <button class="category-btn bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_4px_14px_0_rgba(239,68,68,0.39)]"
+                data-type="hospital">
                 <i class="fa-regular fa-hospital text-2xl mb-1"></i>
                 <span>En Yakın<br>Hastaneler</span>
             </button>
             <!-- 4. Cafe & Restoranlar -->
-            <button class="category-btn bg-[#f43f5e] hover:bg-[#e11d48] shadow-[0_4px_14px_0_rgba(244,63,94,0.39)]" data-type="restaurant">
+            <button class="category-btn bg-[#f43f5e] hover:bg-[#e11d48] shadow-[0_4px_14px_0_rgba(244,63,94,0.39)]"
+                data-type="restaurant">
                 <i class="fa-solid fa-utensils text-2xl mb-1"></i>
                 <span>Cafe &<br>Restoranlar</span>
             </button>
             <!-- 5. En Yakın Marketler -->
-            <button class="category-btn bg-[#2dd4bf] hover:bg-[#14b8a6] shadow-[0_4px_14px_0_rgba(20,184,166,0.39)]" data-type="supermarket">
+            <button class="category-btn bg-[#2dd4bf] hover:bg-[#14b8a6] shadow-[0_4px_14px_0_rgba(20,184,166,0.39)]"
+                data-type="supermarket">
                 <i class="fa-solid fa-bag-shopping text-2xl mb-1"></i>
                 <span>En Yakın<br>Marketler</span>
             </button>
             <!-- 6. En Yakın Benzinlikler -->
-            <button class="category-btn bg-[#eab308] hover:bg-[#ca8a04] shadow-[0_4px_14px_0_rgba(234,179,8,0.39)]" data-type="fuel">
+            <button class="category-btn bg-[#eab308] hover:bg-[#ca8a04] shadow-[0_4px_14px_0_rgba(234,179,8,0.39)]"
+                data-type="fuel">
                 <i class="fa-solid fa-gas-pump text-2xl mb-1"></i>
                 <span>En Yakın<br>Benzinlikler</span>
             </button>
             <!-- 7. Giyim Mağazaları -->
-            <button class="category-btn bg-[#ec4899] hover:bg-[#db2777] shadow-[0_4px_14px_0_rgba(236,72,153,0.39)]" data-type="clothes">
+            <button class="category-btn bg-[#ec4899] hover:bg-[#db2777] shadow-[0_4px_14px_0_rgba(236,72,153,0.39)]"
+                data-type="clothes">
                 <i class="fa-solid fa-shirt text-2xl mb-1"></i>
                 <span>Giyim<br>Mağazaları</span>
             </button>
             <!-- 8. En Yakın Otoparklar -->
-            <button class="category-btn bg-[#8b5cf6] hover:bg-[#7c3aed] shadow-[0_4px_14px_0_rgba(139,92,246,0.39)]" data-type="parking">
+            <button class="category-btn bg-[#8b5cf6] hover:bg-[#7c3aed] shadow-[0_4px_14px_0_rgba(139,92,246,0.39)]"
+                data-type="parking">
                 <i class="fa-solid fa-parking text-2xl mb-1"></i>
                 <span>En Yakın<br>Otoparklar</span>
             </button>
             <!-- 9. Taksi Durakları -->
-            <button class="category-btn bg-[#f59e0b] hover:bg-[#d97706] shadow-[0_4px_14px_0_rgba(245,158,11,0.39)]" data-type="taxi">
+            <button class="category-btn bg-[#f59e0b] hover:bg-[#d97706] shadow-[0_4px_14px_0_rgba(245,158,11,0.39)]"
+                data-type="taxi">
                 <i class="fa-solid fa-taxi text-2xl mb-1"></i>
                 <span>Taksi<br>Durakları</span>
             </button>
             <!-- 10. Turistik Yerler -->
-            <button class="category-btn bg-[#6366f1] hover:bg-[#4f46e5] shadow-[0_4px_14px_0_rgba(99,102,241,0.39)]" data-type="tourism">
+            <button class="category-btn bg-[#6366f1] hover:bg-[#4f46e5] shadow-[0_4px_14px_0_rgba(99,102,241,0.39)]"
+                data-type="tourism">
                 <i class="fa-solid fa-camera-retro text-2xl mb-1"></i>
                 <span>Turistik<br>Yerler</span>
             </button>
             <!-- 11. En Yakın Oteller -->
-            <button class="category-btn bg-[#0ea5e9] hover:bg-[#0284c7] shadow-[0_4px_14px_0_rgba(14,165,233,0.39)]" data-type="hotel">
+            <button class="category-btn bg-[#0ea5e9] hover:bg-[#0284c7] shadow-[0_4px_14px_0_rgba(14,165,233,0.39)]"
+                data-type="hotel">
                 <i class="fa-regular fa-building text-2xl mb-1"></i>
                 <span>En Yakın<br>Oteller</span>
             </button>
             <!-- 12. Kargo Şubeleri -->
-            <button class="category-btn bg-[#f97316] hover:bg-[#ea580c] shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]" data-type="post_office">
+            <button class="category-btn bg-[#f97316] hover:bg-[#ea580c] shadow-[0_4px_14px_0_rgba(249,115,22,0.39)]"
+                data-type="post_office">
                 <i class="fa-solid fa-truck-fast text-2xl mb-1"></i>
                 <span>Kargo<br>Şubeleri</span>
             </button>
             <!-- 13. Toplanma Alanları -->
-            <button class="category-btn bg-[#10b981] hover:bg-[#059669] shadow-[0_4px_14px_0_rgba(16,185,129,0.39)]" data-type="assembly_point">
+            <button class="category-btn bg-[#10b981] hover:bg-[#059669] shadow-[0_4px_14px_0_rgba(16,185,129,0.39)]"
+                data-type="assembly_point">
                 <i class="fa-solid fa-users text-2xl mb-1"></i>
                 <span>Toplanma<br>Alanları</span>
             </button>
             <!-- 14. Polis Merkezi -->
-            <button class="category-btn bg-[#475569] hover:bg-[#334155] shadow-[0_4px_14px_0_rgba(71,85,105,0.39)]" data-type="police">
+            <button class="category-btn bg-[#475569] hover:bg-[#334155] shadow-[0_4px_14px_0_rgba(71,85,105,0.39)]"
+                data-type="police">
                 <i class="fa-solid fa-shield-halved text-2xl mb-1"></i>
                 <span>Polis<br>Merkezi</span>
             </button>
             <!-- 15. En Yakın Eczaneler -->
-            <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]" data-type="pharmacy">
+            <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]"
+                data-type="pharmacy">
                 <i class="fa-solid fa-capsules text-2xl mb-1"></i>
                 <span>En Yakın<br>Eczaneler</span>
             </button>
         </div>
 
         <div id="emergency-actions" class="hidden flex flex-col gap-3 mt-2">
-            <button id="btn-sms-location" class="w-full py-6 bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_10px_25px_-5px_rgba(239,68,68,0.4)] text-white rounded-[32px] font-black text-xl flex flex-col items-center justify-center gap-1 transition-transform active:scale-[0.98] animate-pulse">
+            <button id="btn-sms-location"
+                class="w-full py-6 bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_10px_25px_-5px_rgba(239,68,68,0.4)] text-white rounded-[32px] font-black text-xl flex flex-col items-center justify-center gap-1 transition-transform active:scale-[0.98] animate-pulse">
                 <i class="fa-solid fa-comment-sms text-3xl"></i>
                 KONUMUMU SMS AT
             </button>
         </div>
 
         <div class="flex flex-col gap-3 mt-4" id="standard-actions">
-            <a href="tel:112" class="w-full py-4 bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] text-white rounded-[20px] font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+            <a href="tel:112"
+                class="w-full py-4 bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] text-white rounded-[20px] font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
                 <i class="fa-solid fa-phone-volume text-xl"></i>
                 112 Acil Çağrı
             </a>
-            <button id="btn-share-location" class="w-full py-4 bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)] text-white rounded-[20px] font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
+            <button id="btn-share-location"
+                class="w-full py-4 bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)] text-white rounded-[20px] font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
                 <i class="fa-solid fa-share-nodes text-xl"></i>
                 Konumumu Paylaş (WhatsApp)
             </button>
         </div>
-        
+
     </main>
 
     <!-- Bildir Button (Bottom Right) -->
     <div class="fixed bottom-4 right-4 z-40">
-        <button id="btn-bildir" class="bg-[#111827] text-white text-xs font-semibold py-2 px-4 rounded-full shadow-lg flex items-center gap-2 hover:bg-gray-800 transition-colors">
+        <button id="btn-bildir"
+            class="bg-[#111827] text-white text-xs font-semibold py-2 px-4 rounded-full shadow-lg flex items-center gap-2 hover:bg-gray-800 transition-colors">
             <i class="fa-regular fa-comment"></i> Bildir
         </button>
     </div>
 
     <!-- Feedback Modal -->
-    <div id="feedback-modal" class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none hidden px-4">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity opacity-0" id="feedback-backdrop"></div>
-        <div class="relative z-10 bg-white w-full max-w-md rounded-2xl shadow-2xl pointer-events-auto flex flex-col scale-95 transition-all duration-300 opacity-0" id="feedback-content">
+    <div id="feedback-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center pointer-events-none hidden px-4">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity opacity-0"
+            id="feedback-backdrop"></div>
+        <div class="relative z-10 bg-white w-full max-w-md rounded-2xl shadow-2xl pointer-events-auto flex flex-col scale-95 transition-all duration-300 opacity-0"
+            id="feedback-content">
             <div class="p-4 flex justify-between items-center border-b border-gray-100">
                 <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
                     <i class="fa-solid fa-comment-dots text-[#f97316]"></i> Geri Bildirim
                 </h3>
-                <button id="close-feedback" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-colors">
+                <button id="close-feedback"
+                    class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-colors">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <div class="p-5 flex flex-col gap-4">
-                <p class="text-sm text-gray-600">Önerilerinizi, karşılaştığınız hataları veya isteklerinizi bizimle paylaşabilirsiniz.</p>
-                <textarea id="feedback-text" rows="4" class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none transition-all" placeholder="Mesajınızı buraya yazın..."></textarea>
-                <button id="btn-submit-feedback" class="w-full py-3 bg-[#111827] hover:bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98] shadow-md">
+                <p class="text-sm text-gray-600">Önerilerinizi, karşılaştığınız hataları veya isteklerinizi bizimle
+                    paylaşabilirsiniz.</p>
+                <textarea id="feedback-text" rows="4"
+                    class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 resize-none transition-all"
+                    placeholder="Mesajınızı buraya yazın..."></textarea>
+                <button id="btn-submit-feedback"
+                    class="w-full py-3 bg-[#111827] hover:bg-gray-800 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98] shadow-md">
                     <i class="fa-regular fa-paper-plane"></i> Gönder
                 </button>
             </div>
@@ -230,20 +271,24 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-[#22c55e] text-white px-5 py-3 rounded-full shadow-lg font-medium text-sm flex items-center gap-2 transition-all duration-300 -translate-y-16 opacity-0 pointer-events-none">
+    <div id="toast"
+        class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] bg-[#22c55e] text-white px-5 py-3 rounded-full shadow-lg font-medium text-sm flex items-center gap-2 transition-all duration-300 -translate-y-16 opacity-0 pointer-events-none">
         <i class="fa-solid fa-circle-check"></i>
         <span>Geri bildiriminiz için teşekkürler!</span>
     </div>
 
     <!-- Results Modal -->
     <div id="results-modal" class="fixed inset-0 z-50 flex flex-col justify-end pointer-events-none hidden">
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity opacity-0" id="modal-backdrop"></div>
-        <div class="relative z-10 bg-white w-full max-h-[85vh] rounded-t-3xl shadow-2xl pointer-events-auto flex flex-col translate-y-full transition-transform duration-300" id="modal-content">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-auto transition-opacity opacity-0"
+            id="modal-backdrop"></div>
+        <div class="relative z-10 bg-white w-full max-h-[85vh] rounded-t-3xl shadow-2xl pointer-events-auto flex flex-col translate-y-full transition-transform duration-300"
+            id="modal-content">
             <div class="p-4 flex justify-between items-center border-b border-gray-100">
                 <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2" id="modal-title">
                     <i class="fa-solid fa-map-location-dot text-blue-500"></i> Sonuçlar
                 </h3>
-                <button id="close-modal" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-colors">
+                <button id="close-modal"
+                    class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-colors">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -255,4 +300,5 @@
 
     <script src="main.js"></script>
 </body>
+
 </html>
