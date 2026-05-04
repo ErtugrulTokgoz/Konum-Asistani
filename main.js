@@ -26,7 +26,12 @@ const locationPing = document.getElementById('location-ping');
 const refreshLocationBtn = document.getElementById('refresh-location');
 const editLocationBtn = document.getElementById('edit-location');
 const shareLocationBtn = document.getElementById('btn-share-location');
+const smsLocationBtn = document.getElementById('btn-sms-location');
 const categoryBtns = document.querySelectorAll('.category-btn');
+const categoryGrid = document.getElementById('category-grid');
+const modeBtns = document.querySelectorAll('.mode-btn');
+const emergencyActions = document.getElementById('emergency-actions');
+const standardActions = document.getElementById('standard-actions');
 
 const modal = document.getElementById('results-modal');
 const modalBackdrop = document.getElementById('modal-backdrop');
@@ -41,6 +46,93 @@ let currentAddress = "";
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     getLocation();
+    checkAutoNightMode();
+    
+    // Mode selection (Safe initialization)
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            console.log("Mode clicked:", btn.dataset.mode);
+            modeBtns.forEach(b => b.classList.remove('active-mode'));
+            btn.classList.add('active-mode');
+            switchMode(btn.dataset.mode);
+        });
+    });
+
+    // Set initial mode
+    const currentHour = new Date().getHours();
+    if (currentHour >= 22 || currentHour < 6) {
+        switchMode('daily'); 
+    }
+});
+
+function checkAutoNightMode() {
+    const hour = new Date().getHours();
+    if (hour >= 22 || hour < 6) {
+        document.body.classList.add('night-mode');
+        // Highlight specific buttons for night mode
+        categoryBtns.forEach(btn => {
+            const type = btn.dataset.type;
+            const isDuty = btn.dataset.duty === 'true';
+            if ((type === 'pharmacy' && isDuty) || type === 'taxi') {
+                btn.classList.add('ring-4', 'ring-yellow-400', 'ring-opacity-50', 'animate-pulse');
+                btn.style.order = "-1"; // Move to top
+            }
+        });
+    } else {
+        document.body.classList.remove('night-mode');
+    }
+}
+
+function switchMode(mode) {
+    document.body.classList.remove('emergency-mode');
+    emergencyActions.classList.add('hidden');
+    standardActions.classList.remove('hidden');
+    
+    // Reset all buttons visibility
+    categoryBtns.forEach(btn => {
+        btn.classList.remove('hidden');
+        btn.style.order = "0";
+    });
+
+    if (mode === 'emergency') {
+        document.body.classList.add('emergency-mode');
+        emergencyActions.classList.remove('hidden');
+        standardActions.classList.add('hidden');
+        
+        categoryBtns.forEach(btn => {
+            const type = btn.dataset.type;
+            const isDuty = btn.dataset.duty === 'true';
+            if (type === 'hospital' || type === 'police' || type === 'assembly_point' || (type === 'pharmacy' && isDuty)) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        });
+    } else if (mode === 'tourist') {
+        const touristOrder = ['tourism', 'hotel', 'restaurant', 'taxi', 'pharmacy', 'post_office', 'atm'];
+        categoryBtns.forEach(btn => {
+            const type = btn.dataset.type;
+            const index = touristOrder.indexOf(type);
+            if (index !== -1) {
+                btn.style.order = index + 1;
+            } else {
+                btn.style.order = "99";
+            }
+        });
+    } else {
+        // Daily Mode - Default order (already 0)
+    }
+}
+
+smsLocationBtn.addEventListener('click', () => {
+    if (!userLocation) {
+        alert("Konumunuz henüz bulunamadı.");
+        return;
+    }
+    const mapsUrl = `https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}`;
+    const text = `ACİL DURUM! Konumum: ${currentAddress}\nHarita: ${mapsUrl}`;
+    window.open(`sms:?body=${encodeURIComponent(text)}`, '_blank');
 });
 
 refreshLocationBtn.addEventListener('click', (e) => {

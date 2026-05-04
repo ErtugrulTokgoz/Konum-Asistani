@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yakinnimda-ne-var-v6';
+const CACHE_NAME = 'yakinnimda-ne-var-v7';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

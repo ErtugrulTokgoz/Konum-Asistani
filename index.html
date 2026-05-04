@@ -34,9 +34,22 @@
         @layer components {
             .category-btn {
                 @apply rounded-[28px] p-2 flex flex-col items-center justify-center gap-1.5 
-                       transition-transform duration-200 active:scale-95 text-white 
+                       transition-all duration-300 active:scale-95 text-white 
                        aspect-square w-full font-semibold text-[10.5px] sm:text-sm leading-tight text-center;
             }
+            .mode-btn { @apply text-gray-400 cursor-pointer; }
+            .mode-btn.active-mode { @apply bg-white text-blue-600 shadow-sm; }
+            
+            /* Emergency Mode specific */
+            .emergency-mode .category-btn { @apply aspect-auto py-6 rounded-[32px] text-lg; }
+            .emergency-mode #category-grid { @apply grid-cols-1 gap-4; }
+            
+            /* Night Mode */
+            .night-mode { @apply bg-[#0f172a] text-slate-200; }
+            .night-mode header h1 { @apply text-white; }
+            .night-mode #mode-selector { @apply bg-slate-800; }
+            .night-mode .mode-btn.active-mode { @apply bg-slate-700 text-blue-400; }
+            .night-mode .category-btn { @apply shadow-none border border-white/5; }
         }
         
         /* Custom Scrollbar */
@@ -76,8 +89,21 @@
             </div>
         </header>
 
+        <!-- Mode Selector -->
+        <div class="flex bg-gray-100 p-1 rounded-2xl mb-6 shadow-inner relative z-10" id="mode-selector">
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn active-mode" data-mode="daily">
+                <i class="fa-solid fa-house-user mr-1"></i> Günlük
+            </button>
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="tourist">
+                <i class="fa-solid fa-map-location-dot mr-1"></i> Turist
+            </button>
+            <button class="flex-1 py-2 text-xs font-bold rounded-xl transition-all duration-300 mode-btn" data-mode="emergency">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> Acil
+            </button>
+        </div>
+
         <!-- 3x5 Grid -->
-        <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6 flex-1 content-start">
+        <div class="grid grid-cols-3 gap-3 md:gap-4 mb-6 flex-1 content-start transition-all duration-500" id="category-grid">
             <!-- 1. Nöbetçi Eczaneler -->
             <button class="category-btn bg-[#22c55e] hover:bg-[#16a34a] shadow-[0_4px_14px_0_rgba(34,197,94,0.39)]" data-type="pharmacy" data-duty="true">
                 <i class="fa-solid fa-capsules text-2xl mb-1"></i>
@@ -155,7 +181,14 @@
             </button>
         </div>
 
-        <div class="flex flex-col gap-3 mt-4">
+        <div id="emergency-actions" class="hidden flex flex-col gap-3 mt-2">
+            <button id="btn-sms-location" class="w-full py-6 bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_10px_25px_-5px_rgba(239,68,68,0.4)] text-white rounded-[32px] font-black text-xl flex flex-col items-center justify-center gap-1 transition-transform active:scale-[0.98] animate-pulse">
+                <i class="fa-solid fa-comment-sms text-3xl"></i>
+                KONUMUMU SMS AT
+            </button>
+        </div>
+
+        <div class="flex flex-col gap-3 mt-4" id="standard-actions">
             <a href="tel:112" class="w-full py-4 bg-[#ef4444] hover:bg-[#dc2626] shadow-[0_4px_14px_0_rgba(239,68,68,0.39)] text-white rounded-[20px] font-bold flex items-center justify-center gap-2 transition-transform active:scale-[0.98]">
                 <i class="fa-solid fa-phone-volume text-xl"></i>
                 112 Acil Çağrı
