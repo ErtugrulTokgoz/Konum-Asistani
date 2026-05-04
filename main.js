@@ -410,18 +410,22 @@ function deg2rad(deg) {
 
 function renderResults(elements, type, isDuty) {
     if (!elements || elements.length === 0) {
-        const googleMapsSearchUrl = `https://www.google.com/maps/search/${encodeURIComponent(modalTitle.innerText.trim())}/@${userLocation.lat},${userLocation.lng},15z`;
+        const categoryName = modalTitle.innerText.trim();
+        const googleMapsSearchUrl = `https://www.google.com/maps/search/${encodeURIComponent(categoryName)}/@${userLocation.lat},${userLocation.lng},15z`;
         
         resultsContainer.innerHTML = `
             <div class="text-center text-gray-400 py-10 px-6">
-                <i class="fa-solid fa-folder-open text-4xl mb-4 text-gray-300"></i>
-                <p class="font-medium mb-6">Yakınınızda sonuç bulunamadı (15km yarıçap).</p>
+                <i class="fa-solid fa-magnifying-glass text-4xl mb-4 text-blue-500/30"></i>
+                <p class="font-medium text-gray-500 mb-6 text-sm">Aradığınız kriterde sonuç bulunamadı (15km).</p>
                 
-                <a href="${googleMapsSearchUrl}" target="_blank" class="w-full py-4 bg-white border-2 border-blue-500 text-blue-600 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all hover:bg-blue-50 active:scale-[0.98]">
-                    <i class="fa-solid fa-magnifying-glass"></i>
+                <a href="${googleMapsSearchUrl}" target="_blank" class="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/30 active:scale-[0.98]">
+                    <i class="fa-solid fa-map-location-dot"></i>
                     Google Haritalar'da Ara
                 </a>
-                <p class="text-[11px] text-gray-400 mt-3 italic">Not: Overpass API'da kayıtlı olmayan yerleri Google Maps üzerinde bulabilirsiniz.</p>
+                <p class="text-[11px] text-gray-400 mt-4 leading-relaxed">
+                    Overpass API verilerinde bu konumda kayıt bulunamadı. <br> 
+                    Google Haritalar üzerinden daha fazla sonuca ulaşabilirsiniz.
+                </p>
             </div>
         `;
         return;
