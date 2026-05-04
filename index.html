@@ -23,37 +23,7 @@
                 }
             }
         }
-        
-        window.handleModeSwitch = function(btn, mode) {
-            console.log("Dinamik Mod Değişimi:", mode);
-            const modeBtns = document.querySelectorAll('.mode-btn');
-            modeBtns.forEach(b => b.classList.remove('active-mode'));
-            btn.classList.add('active-mode');
-            
-            // Logic to switch modes
-            const body = document.body;
-            body.className = body.className.replace(/emergency-mode|daily-mode|tourist-mode/g, '');
-            body.classList.add(mode + '-mode');
-            
-            const grid = document.getElementById('category-grid');
-            const emergencyActions = document.getElementById('emergency-actions');
-            const standardActions = document.getElementById('standard-actions');
-            
-            if (mode === 'emergency') {
-                grid.classList.add('emergency-mode');
-                emergencyActions.classList.remove('hidden');
-                standardActions.classList.add('hidden');
-            } else {
-                grid.classList.remove('emergency-mode');
-                emergencyActions.classList.add('hidden');
-                standardActions.classList.remove('hidden');
-            }
-        };
-
-        window.onload = () => {
-            // Placeholder for initialization
-        };
-    </script>
+    </style>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- FontAwesome -->
