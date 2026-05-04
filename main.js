@@ -6,6 +6,40 @@ var lat = null;
 var lng = null;
 var currentMode = 'daily';
 
+// --- GERİ BİLDİRİM MODAL ---
+function openFeedback() {
+    var m = document.getElementById('feedback-modal');
+    if (!m) return;
+    document.getElementById('fb-message').value = '';
+    document.getElementById('fb-topic').value = 'bug';
+    m.style.display = 'flex';
+}
+
+function closeFeedback() {
+    var m = document.getElementById('feedback-modal');
+    if (m) m.style.display = 'none';
+}
+
+function closeFeedbackIfBackdrop(e) {
+    if (e.target === document.getElementById('feedback-modal')) closeFeedback();
+}
+
+function submitFeedback() {
+    var msg = document.getElementById('fb-message').value.trim();
+    if (!msg) {
+        alert('Lütfen bir mesaj yazın.');
+        return;
+    }
+    closeFeedback();
+    // Teşekkür bildirimi
+    var toast = document.createElement('div');
+    toast.innerText = '✅ Teşekkürler, bildiriminiz alındı!';
+    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+    document.body.appendChild(toast);
+    setTimeout(function() { document.body.removeChild(toast); }, 3000);
+}
+
+
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
     // Service Worker

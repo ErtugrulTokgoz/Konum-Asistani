@@ -12,6 +12,7 @@
     <style>
         * { box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f8fafc; margin: 0; }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .cat-btn {
             display: flex; flex-direction: column; align-items: center;
             justify-content: center; gap: 5px; color: white;
@@ -99,10 +100,50 @@
 </div>
 
 <!-- Bildir -->
-<button onclick="window.location.href='mailto:ertugrultokgoz25@gmail.com'"
-    style="position:fixed;bottom:16px;right:16px;z-index:100;background:#111827;color:white;font-size:12px;font-weight:600;padding:8px 16px;border-radius:999px;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);">
+<button onclick="openFeedback()"
+    style="position:fixed;bottom:16px;right:16px;z-index:100;background:#111827;color:white;font-size:12px;font-weight:600;padding:8px 16px;border-radius:999px;border:none;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;align-items:center;gap:6px;">
     <i class="fa-regular fa-comment"></i> Bildir
 </button>
+
+<!-- Geri Bildirim Modalı -->
+<div id="feedback-modal" onclick="closeFeedbackIfBackdrop(event)" style="display:none;position:fixed;inset:0;z-index:300;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);">
+    <div style="background:white;border-radius:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;animation:slideUp .25s ease;" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="padding:20px 20px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:#f0f9ff;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <i class="fa-solid fa-comment-dots" style="color:#3b82f6;font-size:16px;"></i>
+                </div>
+                <div>
+                    <h3 style="margin:0;font-size:16px;font-weight:800;color:#111827;">Geri Bildirim</h3>
+                    <p style="margin:0;font-size:11px;color:#9ca3af;">Bize ulaşın</p>
+                </div>
+            </div>
+            <button onclick="closeFeedback()" style="width:32px;height:32px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;font-size:18px;color:#6b7280;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <!-- Form -->
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Konu</label>
+                <select id="fb-topic" style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:white;outline:none;font-family:inherit;cursor:pointer;">
+                    <option value="bug">🐛 Hata Bildirimi</option>
+                    <option value="suggestion">💡 Öneri</option>
+                    <option value="other">💬 Diğer</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Mesajınız</label>
+                <textarea id="fb-message" rows="4" placeholder="Mesajınızı buraya yazın..." style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:#fafafa;outline:none;resize:none;font-family:inherit;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="closeFeedback()" style="flex:1;padding:12px;background:#f1f5f9;color:#374151;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">Vazgeç</button>
+                <button onclick="submitFeedback()" style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,.4);display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <i class="fa-solid fa-paper-plane"></i> Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Sonuç Modalı -->
 <div id="result-modal" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;justify-content:flex-end;">
