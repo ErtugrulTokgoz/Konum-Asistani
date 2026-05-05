@@ -199,6 +199,7 @@ var LABELS = {
     tourism: 'Turistik Yerler',
     hotel: 'En Yakın Oteller',
     post_office: 'Kargo Şubeleri',
+    local_food: 'Yerel Lezzetler',
     assembly_point: 'Toplanma Alanları',
     police: 'Polis Merkezi',
     pharmacy: 'En Yakın Eczaneler'
@@ -257,6 +258,12 @@ function fetchPlaces(type) {
             q = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', r, latF, lngF) +
                 nwr('["shop"~"kiosk|convenience|bakery|pastry|deli"]', r, latF, lngF) +
                 nwr('["cuisine"~"kebab|doner|turkish"]', r, latF, lngF);
+            break;
+        case 'local_food':
+            var rLocal = 5000;
+            q = nwr('["amenity"="fast_food"]["cuisine"~"doner|durum|cig kofte|kebab|pide|lahmacun"]', rLocal, latF, lngF) +
+                nwr('["cuisine"~"doner|durum|cig kofte|kebab|pide|lahmacun"]', rLocal, latF, lngF) +
+                nwr('["shop"="deli"]', rLocal, latF, lngF);
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
@@ -385,7 +392,7 @@ function renderPlaces(items, type) {
     var html = '';
     for (var j = 0; j < enriched.length; j++) {
         var item = enriched[j];
-        var defaultName = (type === 'restaurant') ? 'İsimsiz İşletme' : 'İsimsiz Yer';
+        var defaultName = (type === 'restaurant' || type === 'local_food') ? 'İsimsiz İşletme' : 'İsimsiz Yer';
         var name = (item.el.tags && item.el.tags.name && item.el.tags.name.trim()) ? item.el.tags.name.trim() : defaultName;
         var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + item.elat + ',' + item.elon;
         var distStr = formatDist(item.dist);
@@ -436,7 +443,7 @@ function filterButtons(mode) {
     var EMERGENCY_ORDER = ['hospital', 'nobetci_eczane', 'police', 'assembly_point', 'pharmacy'];
 
     // Turist modunda öncelik sırası
-    var TOURIST_PRIORITY = ['tourism', 'hotel', 'restaurant', 'taxi', 'post_office', 'atm', 'pharmacy'];
+    var TOURIST_PRIORITY = ['tourism', 'local_food', 'hotel', 'restaurant', 'taxi', 'post_office', 'atm', 'pharmacy'];
 
     for (var i = 0; i < catBtns.length; i++) {
         var btn = catBtns[i];
