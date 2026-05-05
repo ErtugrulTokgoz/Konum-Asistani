@@ -253,14 +253,10 @@ function fetchPlaces(type) {
                 nwr('["amenity"="clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            var rFood = 4000;
-            // 1. Temel yeme-içme kategorileri (restaurant, fast_food, cafe vb.)
-            var qAmenity = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', rFood, latF, lngF);
-            // 2. Küçük esnaflar ve büfeler (shop=kiosk, shop=convenience vb.)
-            var qShop = nwr('["shop"~"kiosk|convenience|deli|pastry|bakery"]', rFood, latF, lngF);
-            // 3. Mutfak tipine göre (kebab, doner vb. etiketlenmiş yerler)
-            var qCuisine = nwr('["cuisine"~"kebab|doner|turkish|pizza|burger"]', rFood, latF, lngF);
-            q = qAmenity + qShop + qCuisine;
+            // Tüm yeme-içme ve küçük esnaf (büfe/dönerci) ihtimallerini geniş çapta (15km) ara
+            q = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', r, latF, lngF) +
+                nwr('["shop"~"kiosk|convenience|bakery|pastry|deli"]', r, latF, lngF) +
+                nwr('["cuisine"~"kebab|doner|turkish"]', r, latF, lngF);
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
