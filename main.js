@@ -224,11 +224,9 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// --- OVERPASS API (node + way + relation — POST ile gönder) ---
+// --- OVERPASS API (nwr kısaltması ile hızlandırılmış) ---
 function nwr(filter, r, la, lo) {
-    return 'node'     + filter + '(around:' + r + ',' + la + ',' + lo + ');' +
-           'way'      + filter + '(around:' + r + ',' + la + ',' + lo + ');' +
-           'relation' + filter + '(around:' + r + ',' + la + ',' + lo + ');';
+    return 'nwr' + filter + '(around:' + r + ',' + la + ',' + lo + ');';
 }
 
 // Önbellek yardımcıları (1 dakika geçerli)
@@ -282,14 +280,12 @@ function fetchPlaces(type, radiusOverride) {
             q = nwr('["amenity"~"hospital|clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            q = nwr('["amenity"~"restaurant|cafe|fast_food"]', r, latF, lngF) +
-                nwr('["shop"~"kiosk|bakery"]', r, latF, lngF);
+            // Tek bir tarama ile tüm yeme-içme ve dükkanları bul (Hız için kritik)
+            q = nwr('[~"amenity|shop"~"restaurant|cafe|fast_food|kiosk|bakery"]', r, latF, lngF);
             break;
         case 'local_food':
-            // Agresif ama sadeleştirilmiş sorgu
-            q = nwr('["amenity"~"fast_food|restaurant"]', r, latF, lngF) +
-                nwr('["cuisine"~"kebab|doner|pide|lahmacun"]', r, latF, lngF) +
-                nwr('["name"~"Döner|Pide|Kebap|Lahmacun|Büfe",i]', r, latF, lngF);
+            // Agresif ama tekil nwr sorgusu
+            q = nwr('[~"amenity|cuisine|name"~"fast_food|restaurant|kebab|doner|pide|lahmacun|Döner|Kebap|Büfe",i]', r, latF, lngF);
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
