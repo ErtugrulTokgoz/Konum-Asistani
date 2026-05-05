@@ -223,71 +223,69 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// --- OVERPASS API (node + way + relation) ---
-function buildQuery(filter, r) {
-    // Her tip için node, way ve relation birlikte sorgulanır
+// --- OVERPASS API (node + way — relation out center ile uyumsuz) ---
+function nw(filter, r) {
+    // node ve way — Türkiye'deki hastane/polis gibi yapılar way olarak çizilir
     return 'node' + filter + '(around:' + r + ',' + lat + ',' + lng + ');' +
-           'way'  + filter + '(around:' + r + ',' + lat + ',' + lng + ');' +
-           'rel'  + filter + '(around:' + r + ',' + lat + ',' + lng + ');';
+           'way'  + filter + '(around:' + r + ',' + lat + ',' + lng + ');';
 }
 
 function fetchPlaces(type) {
-    var r = 25000; // 25 km — küçük şehirler için yeterli
+    var r = 15000;
     var q = '';
 
     switch(type) {
         case 'atm':
-            q = buildQuery('["amenity"="atm"]', r) +
-                buildQuery('["amenity"="bank"]["atm"="yes"]', r);
+            q = nw('["amenity"="atm"]', r) +
+                nw('["amenity"="bank"]["atm"="yes"]', r);
             break;
         case 'hospital':
-            q = buildQuery('["amenity"="hospital"]', r) +
-                buildQuery('["amenity"="clinic"]', r);
+            q = nw('["amenity"="hospital"]', r) +
+                nw('["amenity"="clinic"]', r);
             break;
         case 'restaurant':
-            q = buildQuery('["amenity"~"restaurant|cafe|fast_food|food_court"]', r);
+            q = nw('["amenity"~"restaurant|cafe|fast_food"]', r);
             break;
         case 'supermarket':
-            q = buildQuery('["shop"~"supermarket|convenience|grocery|mall"]', r);
+            q = nw('["shop"~"supermarket|convenience"]', r);
             break;
         case 'clothes':
-            q = buildQuery('["shop"~"clothes|fashion|boutique"]', r);
+            q = nw('["shop"~"clothes|fashion"]', r);
             break;
         case 'tourism':
-            q = buildQuery('["tourism"~"attraction|museum|viewpoint|gallery"]', r);
+            q = nw('["tourism"~"attraction|museum|viewpoint"]', r);
             break;
         case 'hotel':
-            q = buildQuery('["tourism"~"hotel|motel|hostel|guest_house"]', r);
+            q = nw('["tourism"~"hotel|motel|hostel|guest_house"]', r);
             break;
         case 'post_office':
-            q = buildQuery('["amenity"="post_office"]', r) +
-                buildQuery('["shop"="copyshop"]', r);
+            q = nw('["amenity"="post_office"]', r);
             break;
         case 'assembly_point':
-            q = buildQuery('["emergency"="assembly_point"]', r) +
-                buildQuery('["amenity"="shelter"]', r);
+            q = nw('["emergency"="assembly_point"]', r) +
+                nw('["amenity"="shelter"]', r);
             break;
         case 'police':
-            q = buildQuery('["amenity"="police"]', r);
+            q = nw('["amenity"="police"]', r);
             break;
         case 'pharmacy':
-            q = buildQuery('["amenity"="pharmacy"]', r);
+            q = nw('["amenity"="pharmacy"]', r);
             break;
         case 'fuel':
-            q = buildQuery('["amenity"="fuel"]', r);
+            q = nw('["amenity"="fuel"]', r);
             break;
         case 'parking':
-            q = buildQuery('["amenity"="parking"]', r);
+            q = nw('["amenity"="parking"]', r);
             break;
         case 'taxi':
-            q = buildQuery('["amenity"="taxi"]', r);
+            q = nw('["amenity"="taxi"]', r);
             break;
         default:
-            q = buildQuery('["amenity"="' + type + '"]', r);
+            q = nw('["amenity"="' + type + '"]', r);
     }
 
-    var fullQ = '[out:json][timeout:30];(' + q + ');out center;';
-    var currentType = type; // closure için
+    var fullQ = '[out:json][timeout:25];(' + q + ');out center;';
+    var currentType = type;
 
     fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(fullQ))
         .then(function(res) {
@@ -301,8 +299,9 @@ function fetchPlaces(type) {
             console.error('Overpass hatası:', e);
             var list = document.getElementById('result-list');
             if (list) {
-                var searchTerm = LABELS[currentType] || currentType;
-                var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(searchTerm) + '/@' + lat + ',' + lng + ',14z';
+                var label = LABELS[currentType] || currentType;
+                var mapsSearch = 'https://www.google.com/maps/search/' +
+                    encodeURIComponent(label) + '/@' + lat + ',' + lng + ',14z';
                 list.innerHTML = '<div style="text-align:center;padding:30px;">' +
                     '<p style="color:#ef4444;margin-bottom:12px;">Sunucuya bağlanılamadı.</p>' +
                     '<a href="' + mapsSearch + '" target="_blank" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:700;font-size:13px;">Google Maps\'te Ara</a>' +
@@ -310,6 +309,7 @@ function fetchPlaces(type) {
             }
         });
 }
+
 
 function renderPlaces(items, type) {
     var list = document.getElementById('result-list');
