@@ -253,8 +253,14 @@ function fetchPlaces(type) {
                 nwr('["amenity"="clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            var rFood = 3000;
-            q = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', rFood, latF, lngF);
+            var rFood = 4000;
+            // 1. Temel yeme-içme kategorileri
+            var qAmenity = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', rFood, latF, lngF);
+            // 2. Küçük büfeler, şarküteriler ve dükkanlar
+            var qShop = nwr('["shop"~"kiosk|convenience|deli|pastry|bakery"]', rFood, latF, lngF);
+            // 3. İsim bazlı arama (dönerci, büfe vb. kaçırmamak için)
+            var qKeywords = nwr('[name~"döner|kebap|büfe|dürüm|tost|pide|lahmacun",i]', rFood, latF, lngF);
+            q = qAmenity + qShop + qKeywords;
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
