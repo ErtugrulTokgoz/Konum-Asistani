@@ -231,7 +231,24 @@ function nwr(filter, r, la, lo) {
            'relation' + filter + '(around:' + r + ',' + la + ',' + lo + ');';
 }
 
-function fetchPlaces(type) {
+// Önbellek yardımcıları (1 dakika geçerli)
+function getCache(key) {
+    var cached = sessionStorage.getItem('osm_cache_' + key);
+    if (!cached) return null;
+    var data = JSON.parse(cached);
+    if (Date.now() - data.time > 60000) {
+        sessionStorage.removeItem('osm_cache_' + key);
+        return null;
+    }
+    return data.elements;
+}
+
+function setCache(key, elements) {
+    var data = { time: Date.now(), elements: elements };
+    sessionStorage.setItem('osm_cache_' + key, JSON.stringify(data));
+}
+
+function fetchPlaces(type, radiusOverride) {
     // Koordinat kontrolü — null gelirse hata göster
     if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
         var list = document.getElementById('result-list');
@@ -242,37 +259,37 @@ function fetchPlaces(type) {
     var latF = parseFloat(lat).toFixed(6);
     var lngF = parseFloat(lng).toFixed(6);
     
-    // Yarıçap mantığı: Varsayılan 7500m, istisnalar 10000m
-    var r = 7500;
-    if (['fuel', 'hospital', 'taxi', 'hotel'].indexOf(type) !== -1) {
-        r = 10000;
+    // Önbellek kontrolü (radiusOverride yoksa kullan)
+    if (!radiusOverride) {
+        var cachedData = getCache(type);
+        if (cachedData) {
+            console.log('[Cache Hit]', type);
+            renderPlaces(cachedData, type);
+            return;
+        }
     }
+
+    // Yarıçap mantığı: Başlangıç 5000m, override varsa onu kullan
+    var r = radiusOverride || 5000;
     
     var q = '';
 
     switch(type) {
         case 'atm':
-            q = nwr('["amenity"="atm"]', r, latF, lngF) +
-                nwr('["amenity"="bank"]["atm"="yes"]', r, latF, lngF);
+            q = nwr('["amenity"="atm"]', r, latF, lngF);
             break;
         case 'hospital':
-            q = nwr('["amenity"="hospital"]', r, latF, lngF) +
-                nwr('["amenity"="clinic"]', r, latF, lngF);
+            q = nwr('["amenity"~"hospital|clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            // Tüm yeme-içme ve küçük esnaf (büfe/dönerci) ihtimallerini tara
-            q = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', r, latF, lngF) +
-                nwr('["shop"~"kiosk|convenience|bakery|pastry|deli"]', r, latF, lngF) +
-                nwr('["cuisine"~"kebab|doner|turkish"]', r, latF, lngF);
+            q = nwr('["amenity"~"restaurant|cafe|fast_food"]', r, latF, lngF) +
+                nwr('["shop"~"kiosk|bakery"]', r, latF, lngF);
             break;
         case 'local_food':
-            // 1. Temel fast_food + restaurant + cafe + bakery etiketleri
-            q = nwr('["amenity"~"fast_food|restaurant|cafe"]', r, latF, lngF) +
-                nwr('["shop"~"bakery|deli"]', r, latF, lngF) +
-                // 2. Cuisine tipine gore (kebab, doner, pide vb.)
-                nwr('["cuisine"~"kebab|doner|turkish|pide|lahmacun"]', r, latF, lngF) +
-                // 3. Isim bazli regex - hangi etiketle kayitli olursa olsun yakala
-                nwr('["name"~"Döner|Pide|Kebap|Çiğköfte|Lahmacun|Büfe|Sofrası|Dürüm|Tost",i]', r, latF, lngF);
+            // Agresif ama sadeleştirilmiş sorgu
+            q = nwr('["amenity"~"fast_food|restaurant"]', r, latF, lngF) +
+                nwr('["cuisine"~"kebab|doner|pide|lahmacun"]', r, latF, lngF) +
+                nwr('["name"~"Döner|Pide|Kebap|Lahmacun|Büfe",i]', r, latF, lngF);
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
@@ -284,14 +301,13 @@ function fetchPlaces(type) {
             q = nwr('["tourism"~"attraction|museum|viewpoint"]', r, latF, lngF);
             break;
         case 'hotel':
-            q = nwr('["tourism"~"hotel|motel|hostel|guest_house"]', r, latF, lngF);
+            q = nwr('["tourism"~"hotel|motel"]', r, latF, lngF);
             break;
         case 'post_office':
             q = nwr('["amenity"="post_office"]', r, latF, lngF);
             break;
         case 'assembly_point':
-            q = nwr('["emergency"="assembly_point"]', r, latF, lngF) +
-                nwr('["amenity"="shelter"]', r, latF, lngF);
+            q = nwr('["emergency"="assembly_point"]', r, latF, lngF);
             break;
         case 'police':
             q = nwr('["amenity"="police"]', r, latF, lngF);
@@ -312,7 +328,8 @@ function fetchPlaces(type) {
             q = nwr('["amenity"="' + type + '"]', r, latF, lngF);
     }
 
-    var fullQ = '[out:json][timeout:25];(' + q + ');out center;';
+    // [timeout:10] ve out 50 limitleri eklendi
+    var fullQ = '[out:json][timeout:10];(' + q + ');out center 50;';
     console.log('[Overpass Sorgu]', fullQ);
 
     var currentType = type;
@@ -328,8 +345,9 @@ function fetchPlaces(type) {
             return res.json();
         })
         .then(function(data) {
-            console.log('[Overpass Sonuç]', data.elements ? data.elements.length + ' öğe' : 'boş');
-            renderPlaces(data.elements || [], currentType);
+            var elements = data.elements || [];
+            if (!radiusOverride) setCache(currentType, elements);
+            renderPlaces(elements, currentType, r);
         })
         .catch(function(e) {
             console.error('[Overpass Hata]', e);
@@ -364,32 +382,34 @@ function formatDist(km) {
     return km.toFixed(1) + ' km';
 }
 
-function renderPlaces(items, type) {
+function renderPlaces(items, type, currentRadius) {
     var list = document.getElementById('result-list');
     if (!list) return;
 
     if (!items || items.length === 0) {
         var searchTerm = LABELS[type] || type;
         var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(searchTerm) + '/@' + lat + ',' + lng + ',14z';
+        
+        var html = '<div style="text-align:center;padding:30px;">';
+        html += '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">5km içinde sonuç bulunamadı.</p>';
+        
+        // "Daha geniş alanda ara" butonu (75km)
+        if (currentRadius < 75000) {
+            html += '<button onclick="fetchPlaces(\'' + type + '\', 75000)" style="display:block;width:100%;background:#3b82f6;color:white;padding:14px;border-radius:14px;border:none;font-weight:700;margin-bottom:10px;cursor:pointer;">' +
+                    '🔍 75km Çapında Daha Geniş Ara</button>';
+        }
+
         // local_food icin ozel ve buyuk fallback butonu
         if (type === 'local_food') {
             var mapsFood = 'https://www.google.com/maps/search/d%C3%B6nerci+pide+kebap/@' + lat + ',' + lng + ',15z';
-            list.innerHTML = '<div style="text-align:center;padding:30px;">' +
-                '<div style="font-size:48px;margin-bottom:12px;">🌯</div>' +
-                '<p style="color:#374151;font-weight:700;font-size:15px;margin-bottom:6px;">Yakınınızda kayıtlı yerel lezzet bulunamadı.</p>' +
-                '<p style="color:#9ca3af;font-size:12px;margin-bottom:20px;">OpenStreetMap verisi eksik olabilir.</p>' +
-                '<a href="' + mapsFood + '" target="_blank" style="display:block;background:linear-gradient(135deg,#ea580c,#f97316);color:white;padding:16px 24px;border-radius:16px;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 4px 14px rgba(234,88,12,.4);margin-bottom:10px;">' +
-                '🗺️ Aranızın lezzeti bulamadınız mı?<br><span style="font-size:12px;font-weight:600;opacity:.9;">Google Haritalar\'da Dönerci Ara</span></a>' +
-                '<a href="' + mapsSearch + '" target="_blank" style="display:block;background:#f1f5f9;color:#374151;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:600;font-size:13px;">' +
-                'Tüm Yerel Lezzetleri Haritada Göster</a>' +
-                '</div>';
-        } else {
-            list.innerHTML = '<div style="text-align:center;padding:30px;">' +
-                '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">Yakınınızda OpenStreetMap\'te kayıtlı sonuç bulunamadı.</p>' +
-                '<a href="' + mapsSearch + '" target="_blank" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:700;font-size:13px;">' +
-                'Google Maps\'te Ara</a>' +
-                '</div>';
+            html += '<a href="' + mapsFood + '" target="_blank" style="display:block;background:linear-gradient(135deg,#ea580c,#f97316);color:white;padding:16px 24px;border-radius:16px;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 4px 14px rgba(234,88,12,.4);margin-bottom:10px;">' +
+                    '🗺️ Google Haritalar\'da Dönerci Ara</a>';
         }
+
+        html += '<a href="' + mapsSearch + '" target="_blank" style="display:block;background:#f1f5f9;color:#374151;padding:12px;border-radius:14px;text-decoration:none;font-weight:600;font-size:13px;">' +
+                'Google Maps\'te Ara</a></div>';
+        
+        list.innerHTML = html;
         return;
     }
 
