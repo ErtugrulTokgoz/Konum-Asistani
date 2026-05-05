@@ -241,7 +241,13 @@ function fetchPlaces(type) {
 
     var latF = parseFloat(lat).toFixed(6);
     var lngF = parseFloat(lng).toFixed(6);
-    var r = 15000;
+    
+    // Yarıçap mantığı: Varsayılan 7500m, istisnalar 10000m
+    var r = 7500;
+    if (['fuel', 'hospital', 'taxi', 'hotel'].indexOf(type) !== -1) {
+        r = 10000;
+    }
+    
     var q = '';
 
     switch(type) {
@@ -254,20 +260,19 @@ function fetchPlaces(type) {
                 nwr('["amenity"="clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            // Tüm yeme-içme ve küçük esnaf (büfe/dönerci) ihtimallerini geniş çapta (15km) ara
+            // Tüm yeme-içme ve küçük esnaf (büfe/dönerci) ihtimallerini tara
             q = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', r, latF, lngF) +
                 nwr('["shop"~"kiosk|convenience|bakery|pastry|deli"]', r, latF, lngF) +
                 nwr('["cuisine"~"kebab|doner|turkish"]', r, latF, lngF);
             break;
         case 'local_food':
-            var rLocal = 5000;
             // 1. Temel fast_food + restaurant + cafe + bakery etiketleri
-            q = nwr('["amenity"~"fast_food|restaurant|cafe"]', rLocal, latF, lngF) +
-                nwr('["shop"~"bakery|deli"]', rLocal, latF, lngF) +
+            q = nwr('["amenity"~"fast_food|restaurant|cafe"]', r, latF, lngF) +
+                nwr('["shop"~"bakery|deli"]', r, latF, lngF) +
                 // 2. Cuisine tipine gore (kebab, doner, pide vb.)
-                nwr('["cuisine"~"kebab|doner|turkish|pide|lahmacun"]', rLocal, latF, lngF) +
+                nwr('["cuisine"~"kebab|doner|turkish|pide|lahmacun"]', r, latF, lngF) +
                 // 3. Isim bazli regex - hangi etiketle kayitli olursa olsun yakala
-                nwr('["name"~"Döner|Pide|Kebap|Çiğköfte|Lahmacun|Büfe|Sofrası|Dürüm|Tost",i]', rLocal, latF, lngF);
+                nwr('["name"~"Döner|Pide|Kebap|Çiğköfte|Lahmacun|Büfe|Sofrası|Dürüm|Tost",i]', r, latF, lngF);
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
