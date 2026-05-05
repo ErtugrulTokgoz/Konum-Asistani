@@ -223,10 +223,11 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// --- OVERPASS API (node + way — POST ile gönder) ---
-function nw(filter, r, la, lo) {
-    return 'node' + filter + '(around:' + r + ',' + la + ',' + lo + ');' +
-           'way'  + filter + '(around:' + r + ',' + la + ',' + lo + ');';
+// --- OVERPASS API (node + way + relation — POST ile gönder) ---
+function nwr(filter, r, la, lo) {
+    return 'node'     + filter + '(around:' + r + ',' + la + ',' + lo + ');' +
+           'way'      + filter + '(around:' + r + ',' + la + ',' + lo + ');' +
+           'relation' + filter + '(around:' + r + ',' + la + ',' + lo + ');';
 }
 
 function fetchPlaces(type) {
@@ -244,52 +245,53 @@ function fetchPlaces(type) {
 
     switch(type) {
         case 'atm':
-            q = nw('["amenity"="atm"]', r, latF, lngF) +
-                nw('["amenity"="bank"]["atm"="yes"]', r, latF, lngF);
+            q = nwr('["amenity"="atm"]', r, latF, lngF) +
+                nwr('["amenity"="bank"]["atm"="yes"]', r, latF, lngF);
             break;
         case 'hospital':
-            q = nw('["amenity"="hospital"]', r, latF, lngF) +
-                nw('["amenity"="clinic"]', r, latF, lngF);
+            q = nwr('["amenity"="hospital"]', r, latF, lngF) +
+                nwr('["amenity"="clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            q = nw('["amenity"~"restaurant|cafe|fast_food"]', r, latF, lngF);
+            var rFood = 3000;
+            q = nwr('["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]', rFood, latF, lngF);
             break;
         case 'supermarket':
-            q = nw('["shop"~"supermarket|convenience"]', r, latF, lngF);
+            q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
             break;
         case 'clothes':
-            q = nw('["shop"~"clothes|fashion"]', r, latF, lngF);
+            q = nwr('["shop"~"clothes|fashion"]', r, latF, lngF);
             break;
         case 'tourism':
-            q = nw('["tourism"~"attraction|museum|viewpoint"]', r, latF, lngF);
+            q = nwr('["tourism"~"attraction|museum|viewpoint"]', r, latF, lngF);
             break;
         case 'hotel':
-            q = nw('["tourism"~"hotel|motel|hostel|guest_house"]', r, latF, lngF);
+            q = nwr('["tourism"~"hotel|motel|hostel|guest_house"]', r, latF, lngF);
             break;
         case 'post_office':
-            q = nw('["amenity"="post_office"]', r, latF, lngF);
+            q = nwr('["amenity"="post_office"]', r, latF, lngF);
             break;
         case 'assembly_point':
-            q = nw('["emergency"="assembly_point"]', r, latF, lngF) +
-                nw('["amenity"="shelter"]', r, latF, lngF);
+            q = nwr('["emergency"="assembly_point"]', r, latF, lngF) +
+                nwr('["amenity"="shelter"]', r, latF, lngF);
             break;
         case 'police':
-            q = nw('["amenity"="police"]', r, latF, lngF);
+            q = nwr('["amenity"="police"]', r, latF, lngF);
             break;
         case 'pharmacy':
-            q = nw('["amenity"="pharmacy"]', r, latF, lngF);
+            q = nwr('["amenity"="pharmacy"]', r, latF, lngF);
             break;
         case 'fuel':
-            q = nw('["amenity"="fuel"]', r, latF, lngF);
+            q = nwr('["amenity"="fuel"]', r, latF, lngF);
             break;
         case 'parking':
-            q = nw('["amenity"="parking"]', r, latF, lngF);
+            q = nwr('["amenity"="parking"]', r, latF, lngF);
             break;
         case 'taxi':
-            q = nw('["amenity"="taxi"]', r, latF, lngF);
+            q = nwr('["amenity"="taxi"]', r, latF, lngF);
             break;
         default:
-            q = nw('["amenity"="' + type + '"]', r, latF, lngF);
+            q = nwr('["amenity"="' + type + '"]', r, latF, lngF);
     }
 
     var fullQ = '[out:json][timeout:25];(' + q + ');out center;';
@@ -381,7 +383,8 @@ function renderPlaces(items, type) {
     var html = '';
     for (var j = 0; j < enriched.length; j++) {
         var item = enriched[j];
-        var name = (item.el.tags && item.el.tags.name) ? item.el.tags.name : 'İsimsiz Yer';
+        var defaultName = (type === 'restaurant') ? 'İsimsiz İşletme' : 'İsimsiz Yer';
+        var name = (item.el.tags && item.el.tags.name && item.el.tags.name.trim()) ? item.el.tags.name.trim() : defaultName;
         var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + item.elat + ',' + item.elon;
         var distStr = formatDist(item.dist);
 
