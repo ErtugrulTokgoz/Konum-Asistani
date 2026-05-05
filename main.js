@@ -261,9 +261,13 @@ function fetchPlaces(type) {
             break;
         case 'local_food':
             var rLocal = 5000;
-            q = nwr('["amenity"="fast_food"]["cuisine"~"doner|durum|cig kofte|kebab|pide|lahmacun"]', rLocal, latF, lngF) +
-                nwr('["cuisine"~"doner|durum|cig kofte|kebab|pide|lahmacun"]', rLocal, latF, lngF) +
-                nwr('["shop"="deli"]', rLocal, latF, lngF);
+            // 1. Temel fast_food + restaurant + cafe + bakery etiketleri
+            q = nwr('["amenity"~"fast_food|restaurant|cafe"]', rLocal, latF, lngF) +
+                nwr('["shop"~"bakery|deli"]', rLocal, latF, lngF) +
+                // 2. Cuisine tipine gore (kebab, doner, pide vb.)
+                nwr('["cuisine"~"kebab|doner|turkish|pide|lahmacun"]', rLocal, latF, lngF) +
+                // 3. Isim bazli regex - hangi etiketle kayitli olursa olsun yakala
+                nwr('["name"~"Döner|Pide|Kebap|Çiğköfte|Lahmacun|Büfe|Sofrası|Dürüm|Tost",i]', rLocal, latF, lngF);
             break;
         case 'supermarket':
             q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
@@ -362,11 +366,25 @@ function renderPlaces(items, type) {
     if (!items || items.length === 0) {
         var searchTerm = LABELS[type] || type;
         var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(searchTerm) + '/@' + lat + ',' + lng + ',14z';
-        list.innerHTML = '<div style="text-align:center;padding:30px;">' +
-            '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">Yakınınızda OpenStreetMap\'te kayıtlı sonuç bulunamadı.</p>' +
-            '<a href="' + mapsSearch + '" target="_blank" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:700;font-size:13px;">' +
-            'Google Maps\'te Ara</a>' +
-            '</div>';
+        // local_food icin ozel ve buyuk fallback butonu
+        if (type === 'local_food') {
+            var mapsFood = 'https://www.google.com/maps/search/d%C3%B6nerci+pide+kebap/@' + lat + ',' + lng + ',15z';
+            list.innerHTML = '<div style="text-align:center;padding:30px;">' +
+                '<div style="font-size:48px;margin-bottom:12px;">🌯</div>' +
+                '<p style="color:#374151;font-weight:700;font-size:15px;margin-bottom:6px;">Yakınınızda kayıtlı yerel lezzet bulunamadı.</p>' +
+                '<p style="color:#9ca3af;font-size:12px;margin-bottom:20px;">OpenStreetMap verisi eksik olabilir.</p>' +
+                '<a href="' + mapsFood + '" target="_blank" style="display:block;background:linear-gradient(135deg,#ea580c,#f97316);color:white;padding:16px 24px;border-radius:16px;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 4px 14px rgba(234,88,12,.4);margin-bottom:10px;">' +
+                '🗺️ Aranızın lezzeti bulamadınız mı?<br><span style="font-size:12px;font-weight:600;opacity:.9;">Google Haritalar\'da Dönerci Ara</span></a>' +
+                '<a href="' + mapsSearch + '" target="_blank" style="display:block;background:#f1f5f9;color:#374151;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:600;font-size:13px;">' +
+                'Tüm Yerel Lezzetleri Haritada Göster</a>' +
+                '</div>';
+        } else {
+            list.innerHTML = '<div style="text-align:center;padding:30px;">' +
+                '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">Yakınınızda OpenStreetMap\'te kayıtlı sonuç bulunamadı.</p>' +
+                '<a href="' + mapsSearch + '" target="_blank" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:700;font-size:13px;">' +
+                'Google Maps\'te Ara</a>' +
+                '</div>';
+        }
         return;
     }
 
@@ -388,6 +406,18 @@ function renderPlaces(items, type) {
 
     // Mesafeye göre sırala (en yakın önce)
     enriched.sort(function(a, b) { return a.dist - b.dist; });
+
+    // local_food için: Döner veya Pide ismini taşıyanları öne al (Reklam önceliği)
+    if (type === 'local_food') {
+        enriched.sort(function(a, b) {
+            var aN = (a.el.tags && a.el.tags.name) ? a.el.tags.name.toLowerCase() : '';
+            var bN = (b.el.tags && b.el.tags.name) ? b.el.tags.name.toLowerCase() : '';
+            var aP = (aN.indexOf('döner') !== -1 || aN.indexOf('pide') !== -1) ? 0 : 1;
+            var bP = (bN.indexOf('döner') !== -1 || bN.indexOf('pide') !== -1) ? 0 : 1;
+            if (aP !== bP) return aP - bP;
+            return a.dist - b.dist;
+        });
+    }
 
     var html = '';
     for (var j = 0; j < enriched.length; j++) {
