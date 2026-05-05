@@ -223,92 +223,109 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// --- OVERPASS API (node + way — relation out center ile uyumsuz) ---
-function nw(filter, r) {
-    // node ve way — Türkiye'deki hastane/polis gibi yapılar way olarak çizilir
-    return 'node' + filter + '(around:' + r + ',' + lat + ',' + lng + ');' +
-           'way'  + filter + '(around:' + r + ',' + lat + ',' + lng + ');';
+// --- OVERPASS API (node + way — POST ile gönder) ---
+function nw(filter, r, la, lo) {
+    return 'node' + filter + '(around:' + r + ',' + la + ',' + lo + ');' +
+           'way'  + filter + '(around:' + r + ',' + la + ',' + lo + ');';
 }
 
 function fetchPlaces(type) {
+    // Koordinat kontrolü — null gelirse hata göster
+    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
+        var list = document.getElementById('result-list');
+        if (list) list.innerHTML = '<p style="text-align:center;padding:30px;color:#ef4444;">Konum koordinatı alınamadı. Lütfen konumu yenileyin.</p>';
+        return;
+    }
+
+    var latF = parseFloat(lat).toFixed(6);
+    var lngF = parseFloat(lng).toFixed(6);
     var r = 15000;
     var q = '';
 
     switch(type) {
         case 'atm':
-            q = nw('["amenity"="atm"]', r) +
-                nw('["amenity"="bank"]["atm"="yes"]', r);
+            q = nw('["amenity"="atm"]', r, latF, lngF) +
+                nw('["amenity"="bank"]["atm"="yes"]', r, latF, lngF);
             break;
         case 'hospital':
-            q = nw('["amenity"="hospital"]', r) +
-                nw('["amenity"="clinic"]', r);
+            q = nw('["amenity"="hospital"]', r, latF, lngF) +
+                nw('["amenity"="clinic"]', r, latF, lngF);
             break;
         case 'restaurant':
-            q = nw('["amenity"~"restaurant|cafe|fast_food"]', r);
+            q = nw('["amenity"~"restaurant|cafe|fast_food"]', r, latF, lngF);
             break;
         case 'supermarket':
-            q = nw('["shop"~"supermarket|convenience"]', r);
+            q = nw('["shop"~"supermarket|convenience"]', r, latF, lngF);
             break;
         case 'clothes':
-            q = nw('["shop"~"clothes|fashion"]', r);
+            q = nw('["shop"~"clothes|fashion"]', r, latF, lngF);
             break;
         case 'tourism':
-            q = nw('["tourism"~"attraction|museum|viewpoint"]', r);
+            q = nw('["tourism"~"attraction|museum|viewpoint"]', r, latF, lngF);
             break;
         case 'hotel':
-            q = nw('["tourism"~"hotel|motel|hostel|guest_house"]', r);
+            q = nw('["tourism"~"hotel|motel|hostel|guest_house"]', r, latF, lngF);
             break;
         case 'post_office':
-            q = nw('["amenity"="post_office"]', r);
+            q = nw('["amenity"="post_office"]', r, latF, lngF);
             break;
         case 'assembly_point':
-            q = nw('["emergency"="assembly_point"]', r) +
-                nw('["amenity"="shelter"]', r);
+            q = nw('["emergency"="assembly_point"]', r, latF, lngF) +
+                nw('["amenity"="shelter"]', r, latF, lngF);
             break;
         case 'police':
-            q = nw('["amenity"="police"]', r);
+            q = nw('["amenity"="police"]', r, latF, lngF);
             break;
         case 'pharmacy':
-            q = nw('["amenity"="pharmacy"]', r);
+            q = nw('["amenity"="pharmacy"]', r, latF, lngF);
             break;
         case 'fuel':
-            q = nw('["amenity"="fuel"]', r);
+            q = nw('["amenity"="fuel"]', r, latF, lngF);
             break;
         case 'parking':
-            q = nw('["amenity"="parking"]', r);
+            q = nw('["amenity"="parking"]', r, latF, lngF);
             break;
         case 'taxi':
-            q = nw('["amenity"="taxi"]', r);
+            q = nw('["amenity"="taxi"]', r, latF, lngF);
             break;
         default:
-            q = nw('["amenity"="' + type + '"]', r);
+            q = nw('["amenity"="' + type + '"]', r, latF, lngF);
     }
 
     var fullQ = '[out:json][timeout:25];(' + q + ');out center;';
-    var currentType = type;
+    console.log('[Overpass Sorgu]', fullQ);
 
-    fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(fullQ))
+    var currentType = type;
+    var endpoint = 'https://overpass-api.de/api/interpreter';
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(fullQ)
+    })
         .then(function(res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.json();
         })
         .then(function(data) {
+            console.log('[Overpass Sonuç]', data.elements ? data.elements.length + ' öğe' : 'boş');
             renderPlaces(data.elements || [], currentType);
         })
         .catch(function(e) {
-            console.error('Overpass hatası:', e);
+            console.error('[Overpass Hata]', e);
             var list = document.getElementById('result-list');
             if (list) {
                 var label = LABELS[currentType] || currentType;
                 var mapsSearch = 'https://www.google.com/maps/search/' +
-                    encodeURIComponent(label) + '/@' + lat + ',' + lng + ',14z';
+                    encodeURIComponent(label) + '/@' + latF + ',' + lngF + ',14z';
                 list.innerHTML = '<div style="text-align:center;padding:30px;">' +
-                    '<p style="color:#ef4444;margin-bottom:12px;">Sunucuya bağlanılamadı.</p>' +
+                    '<p style="color:#ef4444;margin-bottom:12px;">Sunucu hatası: ' + e.message + '</p>' +
                     '<a href="' + mapsSearch + '" target="_blank" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:700;font-size:13px;">Google Maps\'te Ara</a>' +
                     '</div>';
             }
         });
 }
+
 
 
 function renderPlaces(items, type) {
