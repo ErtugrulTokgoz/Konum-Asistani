@@ -1,5 +1,5 @@
 // Her zaman ağdan al, eski cache'i sil
-const CACHE_NAME = 'yakinnimda-v200';
+const CACHE_NAME = 'yakinnimda-v300';
 
 self.addEventListener('install', function(e) {
     self.skipWaiting();
