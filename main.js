@@ -328,41 +328,74 @@ function fetchPlaces(type) {
 
 
 
+// Haversine mesafe hesaplama (km)
+function haversine(la1, lo1, la2, lo2) {
+    var R = 6371;
+    var dLat = (la2 - la1) * Math.PI / 180;
+    var dLon = (lo2 - lo1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(la1 * Math.PI / 180) * Math.cos(la2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDist(km) {
+    if (km < 1) return Math.round(km * 1000) + ' m';
+    return km.toFixed(1) + ' km';
+}
+
 function renderPlaces(items, type) {
     var list = document.getElementById('result-list');
     if (!list) return;
 
     if (!items || items.length === 0) {
-        // Sonuç yok — Google Maps fallback
         var searchTerm = LABELS[type] || type;
         var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(searchTerm) + '/@' + lat + ',' + lng + ',14z';
         list.innerHTML = '<div style="text-align:center;padding:30px;">' +
             '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">Yakınınızda OpenStreetMap\'te kayıtlı sonuç bulunamadı.</p>' +
-            '<a href="' + mapsSearch + '" target="_blank" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:700;font-size:13px;box-shadow:0 4px 12px rgba(59,130,246,.35);">' +
-            '<i class="fa-brands fa-google" style="margin-right:6px;"></i>Google Maps\'te Ara</a>' +
+            '<a href="' + mapsSearch + '" target="_blank" style="display:inline-block;background:#3b82f6;color:white;padding:12px 24px;border-radius:14px;text-decoration:none;font-weight:700;font-size:13px;">' +
+            'Google Maps\'te Ara</a>' +
             '</div>';
         return;
     }
 
-    var html = '';
+    // Koordinatları olan öğeleri filtrele ve mesafeyi hesapla
+    var enriched = [];
     for (var i = 0; i < items.length; i++) {
         var el = items[i];
-        var name = (el.tags && el.tags.name) ? el.tags.name : 'İsimsiz Yer';
-        var elat = el.lat || (el.center && el.center.lat) || '';
-        var elon = el.lon || (el.center && el.center.lon) || '';
-        if (!elat || !elon) continue; // koordinatsız sonucu atla
-        var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + elat + ',' + elon;
-        html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
-            '<span style="font-weight:700;color:#1f2937;font-size:13px;flex:1;">' + name + '</span>' +
-            '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6;color:white;font-size:11px;font-weight:700;padding:8px 12px;border-radius:10px;text-decoration:none;white-space:nowrap;">Yol Tarifi</a>' +
+        var elat = el.lat || (el.center && el.center.lat);
+        var elon = el.lon || (el.center && el.center.lon);
+        if (!elat || !elon) continue;
+        var dist = haversine(parseFloat(lat), parseFloat(lng), parseFloat(elat), parseFloat(elon));
+        enriched.push({ el: el, elat: elat, elon: elon, dist: dist });
+    }
+
+    if (enriched.length === 0) {
+        list.innerHTML = '<p style="text-align:center;padding:30px;color:#9ca3af;">Koordinatlı sonuç bulunamadı.</p>';
+        return;
+    }
+
+    // Mesafeye göre sırala (en yakın önce)
+    enriched.sort(function(a, b) { return a.dist - b.dist; });
+
+    var html = '';
+    for (var j = 0; j < enriched.length; j++) {
+        var item = enriched[j];
+        var name = (item.el.tags && item.el.tags.name) ? item.el.tags.name : 'İsimsiz Yer';
+        var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + item.elat + ',' + item.elon;
+        var distStr = formatDist(item.dist);
+
+        html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+            '<div style="flex:1;min-width:0;">' +
+                '<div style="font-weight:700;color:#1f2937;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
+                '<div style="font-size:11px;color:#6b7280;margin-top:2px;"><i class="fa-solid fa-route" style="margin-right:3px;"></i>' + distStr + '</div>' +
+            '</div>' +
+            '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6;color:white;font-size:11px;font-weight:700;padding:8px 12px;border-radius:10px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Yol Tarifi</a>' +
             '</div>';
     }
-    if (!html) {
-        list.innerHTML = '<p style="text-align:center;padding:30px;color:#9ca3af;">İsimli sonuç bulunamadı.</p>';
-    } else {
-        list.innerHTML = html;
-    }
+    list.innerHTML = html;
 }
+
 
 
 // --- MOD DEĞİŞTİRME ---
