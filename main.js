@@ -52,6 +52,19 @@ function submitFeedback() {
 }
 
 
+// --- SPLASH SCREEN ---
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        var splash = document.getElementById('splash-screen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(function() {
+                splash.style.display = 'none';
+            }, 500); // 0.5s transition
+        }
+    }, 1500);
+});
+
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
     // Service Worker
