@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#3b82f6">
     <title>Yakınımda Ne Var?</title>
-    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -204,12 +203,5 @@
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC5kNeNUbPzjOFA7tkROAsgB_YzOxf9a3g&libraries=places"></script>
 <script src="main.js"></script>
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('./service-worker.js');
-        });
-    }
-</script>
 </body>
 </html>
