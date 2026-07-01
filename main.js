@@ -1,6 +1,10 @@
 /* ===== YAKИНIMDA NE VAR? - main.js ===== */
 'use strict';
 
+var aktifApi = 'overpass';
+var AYLIK_LIMIT = 9500;
+var dbUrl = '';
+
 // --- Global State ---
 var lat = null;
 var lng = null;
@@ -67,6 +71,8 @@ window.addEventListener('load', function() {
 
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
+    baslangictaSayaciAl();
+
     // Service Worker
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./service-worker.js').catch(function(e) {
@@ -199,6 +205,71 @@ function catClick(type, isDuty) {
     openModal(type);
 }
 
+// --- HİBRİT API SİSTEMİ ---
+function baslangictaSayaciAl() {
+    if (dbUrl === '') {
+        return;
+    }
+    
+    fetch(dbUrl)
+        .then(function(cevap) {
+            return cevap.json();
+        })
+        .then(function(sayac) {
+            if (sayac === null) {
+                sayac = 0;
+            }
+            
+            if (sayac < AYLIK_LIMIT) {
+                aktifApi = 'google';
+            } else {
+                aktifApi = 'overpass';
+            }
+        })
+        .catch(function(hata) {
+            aktifApi = 'overpass';
+        });
+}
+
+function arkaPlandaSayaciArtir() {
+    if (dbUrl === '') {
+        return;
+    }
+    
+    fetch(dbUrl)
+        .then(function(cevap) {
+            return cevap.json();
+        })
+        .then(function(sayac) {
+            if (sayac === null) {
+                sayac = 0;
+            }
+            
+            var yeniSayac = sayac + 1;
+            
+            fetch(dbUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(yeniSayac)
+            }).catch(function(hata) {
+                // Hata olursa hiçbir şey yapma
+            });
+        })
+        .catch(function(hata) {
+            // Hata olursa hiçbir şey yapma
+        });
+}
+
+function fetchPlacesHybrid(type) {
+    if (aktifApi === 'google') {
+        arkaPlandaSayaciArtir();
+    } else if (aktifApi === 'overpass') {
+        fetchPlaces(type);
+    }
+}
+
 // --- MODAL ---
 var LABELS = {
     atm: 'En Yakın ATM',
@@ -229,7 +300,7 @@ function openModal(type) {
     list.innerHTML = '<div style="text-align:center;padding:40px;"><span class="loader"></span><p style="color:#6b7280;margin-top:12px;font-size:13px;">Aranıyor...</p></div>';
     modal.style.display = 'flex';
 
-    fetchPlaces(type);
+    fetchPlacesHybrid(type);
 }
 
 function closeModal() {
