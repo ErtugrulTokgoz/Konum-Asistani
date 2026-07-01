@@ -74,13 +74,6 @@ window.addEventListener('load', function() {
 document.addEventListener('DOMContentLoaded', function() {
     baslangictaSayaciAl();
 
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./service-worker.js').catch(function(e) {
-            console.warn('SW kayıt hatası:', e);
-        });
-    }
-
     // Konum al
     startLocation();
 

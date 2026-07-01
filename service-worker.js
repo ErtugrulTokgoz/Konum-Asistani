@@ -1,15 +1,29 @@
-// Her zaman ağdan al, eski cache'i sil
-const CACHE_NAME = 'yakinnimda-v300';
+var CACHE_NAME = 'yakinnimda-cache-v1';
+var ASSETS = [
+    './',
+    './index.html',
+    './main.js',
+    './manifest.json',
+    './icon.ico'
+];
 
 self.addEventListener('install', function(e) {
-    self.skipWaiting();
+    e.waitUntil(
+        caches.open(CACHE_NAME).then(function(cache) {
+            return cache.addAll(ASSETS);
+        }).then(function() {
+            return self.skipWaiting();
+        })
+    );
 });
 
 self.addEventListener('activate', function(e) {
     e.waitUntil(
-        caches.keys().then(function(keys) {
-            return Promise.all(keys.map(function(key) {
-                return caches.delete(key);
+        caches.keys().then(function(keyList) {
+            return Promise.all(keyList.map(function(key) {
+                if (key !== CACHE_NAME) {
+                    return caches.delete(key);
+                }
             }));
         }).then(function() {
             return self.clients.claim();
@@ -17,11 +31,21 @@ self.addEventListener('activate', function(e) {
     );
 });
 
-// Network-first: Her zaman internetten yeni dosyayı al
 self.addEventListener('fetch', function(e) {
     e.respondWith(
-        fetch(e.request).catch(function() {
-            return caches.match(e.request);
+        caches.match(e.request).then(function(response) {
+            if (response) {
+                return response;
+            }
+            return fetch(e.request).catch(function() {
+                return new Response('Çevrimdışı Mod - İnternet Bağlantısı Yok', {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: new Headers({
+                        'Content-Type': 'text/plain'
+                    })
+                });
+            });
         })
     );
 });

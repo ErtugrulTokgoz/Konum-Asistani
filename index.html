@@ -204,5 +204,12 @@
 
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC5kNeNUbPzjOFA7tkROAsgB_YzOxf9a3g&libraries=places"></script>
 <script src="main.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('./service-worker.js');
+        });
+    }
+</script>
 </body>
 </html>

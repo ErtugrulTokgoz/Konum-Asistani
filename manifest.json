@@ -1,6 +1,6 @@
 {
-  "name": "YakınımdaNeVar?",
-  "short_name": "YakınımdaNeVar?",
+  "name": "Yakınımda Ne Var?",
+  "short_name": "Yakınımda Ne Var?",
   "description": "Yakınınızdaki yerleri saniyeler içinde bulun.",
   "start_url": "./index.html",
   "display": "standalone",
