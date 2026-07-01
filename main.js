@@ -3,7 +3,9 @@
 
 var aktifApi = 'overpass';
 var AYLIK_LIMIT = 9500;
-var dbUrl = '';
+var buAy = new Date().toISOString().slice(0, 7);
+var dbUrl = 'https://[FIREBASE-LINKIN].firebasedatabase.app/sorgu_' + buAy + '.json';
+var googleService = null;
 
 // --- Global State ---
 var lat = null;
@@ -72,6 +74,7 @@ window.addEventListener('load', function() {
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
     baslangictaSayaciAl();
+    googleService = new google.maps.places.PlacesService(document.createElement('div'));
 
     // Service Worker
     if ('serviceWorker' in navigator) {
@@ -262,8 +265,46 @@ function arkaPlandaSayaciArtir() {
         });
 }
 
+function googlePlacesArama(type) {
+    if (!googleService) {
+        fetchPlaces(type);
+        return;
+    }
+
+    var kelime = LABELS[type] || type;
+    var konum = new google.maps.LatLng(lat, lng);
+    
+    var istek = {
+        location: konum,
+        radius: 5000,
+        keyword: kelime
+    };
+
+    googleService.nearbySearch(istek, function(sonuclar, durum) {
+        if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
+            var donusturulmus = [];
+            for (var i = 0; i < sonuclar.length; i++) {
+                var yer = sonuclar[i];
+                if (!yer.geometry || !yer.geometry.location) continue;
+                
+                donusturulmus.push({
+                    lat: yer.geometry.location.lat(),
+                    lon: yer.geometry.location.lng(),
+                    tags: {
+                        name: yer.name
+                    }
+                });
+            }
+            renderPlaces(donusturulmus, type, 5000);
+        } else {
+            fetchPlaces(type);
+        }
+    });
+}
+
 function fetchPlacesHybrid(type) {
     if (aktifApi === 'google') {
+        googlePlacesArama(type);
         arkaPlandaSayaciArtir();
     } else if (aktifApi === 'overpass') {
         fetchPlaces(type);
