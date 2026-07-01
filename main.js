@@ -1,7 +1,7 @@
 /* ===== YAKИНIMDA NE VAR? - main.js ===== */
 'use strict';
 
-var aktifApi = 'overpass';
+var aktifApi = 'google';
 var AYLIK_LIMIT = 9500;
 var buAy = new Date().toISOString().slice(0, 7);
 var dbUrl = 'https://konumasistani-default-rtdb.europe-west1.firebasedatabase.app/sorgu_' + buAy + '.json';
@@ -211,15 +211,19 @@ function catClick(type, isDuty) {
 // --- HİBRİT API SİSTEMİ ---
 function baslangictaSayaciAl() {
     if (dbUrl === '') {
+        aktifApi = 'google';
         return;
     }
     
     fetch(dbUrl)
         .then(function(cevap) {
+            if (!cevap.ok) {
+                throw new Error('Bağlantı hatası');
+            }
             return cevap.json();
         })
         .then(function(sayac) {
-            if (sayac === null) {
+            if (sayac === null || isNaN(sayac)) {
                 sayac = 0;
             }
             
@@ -230,7 +234,8 @@ function baslangictaSayaciAl() {
             }
         })
         .catch(function(hata) {
-            aktifApi = 'overpass';
+            // Hata olsa bile ana önceliğimiz olan Google'ı kullanalım
+            aktifApi = 'google';
         });
 }
 
