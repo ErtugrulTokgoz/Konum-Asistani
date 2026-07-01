@@ -5,7 +5,6 @@ var aktifApi = 'google';
 var AYLIK_LIMIT = 9500;
 var buAy = new Date().toISOString().slice(0, 7);
 var dbUrl = 'https://konumasistani-default-rtdb.europe-west1.firebasedatabase.app/sorgu_' + buAy + '.json';
-var googleService = null;
 
 // --- Global State ---
 var lat = null;
@@ -74,7 +73,6 @@ window.addEventListener('load', function() {
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
     baslangictaSayaciAl();
-    googleService = new google.maps.places.PlacesService(document.createElement('div'));
 
     // Service Worker
     if ('serviceWorker' in navigator) {
@@ -271,40 +269,52 @@ function arkaPlandaSayaciArtir() {
 }
 
 function googlePlacesArama(type) {
-    if (!googleService) {
+    if (!window.google || !window.google.maps || !window.google.maps.places || !window.google.maps.places.Place) {
         fetchPlaces(type);
         return;
     }
 
     var kelime = LABELS[type] || type;
-    var konum = new google.maps.LatLng(lat, lng);
     
     var istek = {
-        location: konum,
-        radius: 5000,
-        keyword: kelime
+        textQuery: kelime,
+        fields: ['displayName', 'location'],
+        locationBias: { lat: parseFloat(lat), lng: parseFloat(lng) }
     };
 
-    googleService.nearbySearch(istek, function(sonuclar, durum) {
-        if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
-            var donusturulmus = [];
-            for (var i = 0; i < sonuclar.length; i++) {
-                var yer = sonuclar[i];
-                if (!yer.geometry || !yer.geometry.location) continue;
-                
-                donusturulmus.push({
-                    lat: yer.geometry.location.lat(),
-                    lon: yer.geometry.location.lng(),
-                    tags: {
-                        name: yer.name
+    google.maps.places.Place.searchByText(istek)
+        .then(function(yanit) {
+            var sonuclar = yanit.places;
+            
+            if (sonuclar && sonuclar.length > 0) {
+                var donusturulmus = [];
+                for (var i = 0; i < sonuclar.length; i++) {
+                    var yer = sonuclar[i];
+                    if (!yer.location) continue;
+                    
+                    var mekanAdi = 'İsimsiz Yer';
+                    if (yer.displayName) {
+                        mekanAdi = yer.displayName.text || yer.displayName;
+                    } else if (yer.name) {
+                        mekanAdi = yer.name;
                     }
-                });
+                    
+                    donusturulmus.push({
+                        lat: yer.location.lat(),
+                        lon: yer.location.lng(),
+                        tags: {
+                            name: mekanAdi
+                        }
+                    });
+                }
+                renderPlaces(donusturulmus, type, 5000);
+            } else {
+                fetchPlaces(type);
             }
-            renderPlaces(donusturulmus, type, 5000);
-        } else {
+        })
+        .catch(function(hata) {
             fetchPlaces(type);
-        }
-    });
+        });
 }
 
 function fetchPlacesHybrid(type) {
