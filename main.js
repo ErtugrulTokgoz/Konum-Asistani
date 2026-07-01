@@ -4,7 +4,7 @@
 var aktifApi = 'overpass';
 var AYLIK_LIMIT = 9500;
 var buAy = new Date().toISOString().slice(0, 7);
-var dbUrl = 'https://[FIREBASE-LINKIN].firebasedatabase.app/sorgu_' + buAy + '.json';
+var dbUrl = 'https://konumasistani-default-rtdb.europe-west1.firebasedatabase.app/sorgu_' + buAy + '.json';
 var googleService = null;
 
 // --- Global State ---
