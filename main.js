@@ -1,7 +1,7 @@
 /* ===== YAKИНIMDA NE VAR? - main.js ===== */
 'use strict';
 
-
+var googleService = null;
 var API_LIMIT = 9500;
 var aktifApi = 'google';
 
@@ -92,6 +92,14 @@ window.addEventListener('load', function() {
 
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
+    try {
+        if (window.google && window.google.maps && window.google.maps.places) {
+            googleService = new google.maps.places.PlacesService(document.createElement('div'));
+        }
+    } catch(e) {
+        console.warn('Google Maps yüklenemedi:', e);
+    }
+    
     sayaciKontrolEt();
     startLocation();
 
@@ -212,61 +220,59 @@ function catClick(type, isDuty) {
 }
 
 
-// --- GOOGLE PLACES ARAMASI (YENİ NESİL API) ---
+// --- GOOGLE PLACES ARAMASI (ESKİ KARARLI SÜRÜM) ---
 function googlePlacesArama(type) {
-    // Yeni API'nin yüklü olup olmadığını kontrol et
-    if (!window.google || !google.maps || !google.maps.places || !google.maps.places.Place) {
-        console.warn('Google Place API yüklenemedi, yedeğe geçiliyor...');
+    if (!googleService) {
+        console.warn('Google Service aktif değil, Overpass yedeğine geçiliyor.');
         fetchPlaces(type);
         return;
     }
 
     var kelime = LABELS[type] || type;
+    var konum = new google.maps.LatLng(lat, lng);
     
     var istek = {
-        textQuery: kelime,
-        fields: ['displayName', 'location'],
-        locationBias: { lat: parseFloat(lat), lng: parseFloat(lng) }
+        location: konum,
+        radius: 5000,
+        query: kelime
     };
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
 
-    // Yeni nesil arama (Promise)
-    google.maps.places.Place.searchByText(istek)
-        .then(function(yanit) {
-            var sonuclar = yanit.places;
+    try {
+        // Zaman aşımı koruması (Google 5 saniye içinde cevap vermezse veya callback çökürse yedeğe geç)
+        var zamanAsimi = setTimeout(function() {
+            console.error('Google Maps cevap vermedi (Timeout) -> Overpass Yedeğine Geçiliyor.');
+            fetchPlaces(type);
+        }, 5000);
+
+        googleService.textSearch(istek, function(sonuclar, durum) {
+            clearTimeout(zamanAsimi); // Google cevap verdiyse zaman aşımını iptal et
             
-            if (sonuclar && sonuclar.length > 0) {
+            if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
                 var donusturulmus = [];
                 for (var i = 0; i < sonuclar.length; i++) {
                     var yer = sonuclar[i];
-                    if (!yer.location) continue;
-                    
-                    var mekanAdi = 'İsimsiz Yer';
-                    if (yer.displayName) {
-                        mekanAdi = yer.displayName.text || yer.displayName;
-                    } else if (yer.name) {
-                        mekanAdi = yer.name;
-                    }
+                    if (!yer.geometry || !yer.geometry.location) continue;
                     
                     donusturulmus.push({
-                        lat: yer.location.lat(),
-                        lon: yer.location.lng(),
+                        lat: yer.geometry.location.lat(),
+                        lon: yer.geometry.location.lng(),
                         tags: {
-                            name: mekanAdi
+                            name: yer.name
                         }
                     });
                 }
                 renderPlaces(donusturulmus, type, 5000);
             } else {
-                console.warn('Google sonuç bulamadı, yedeğe geçiliyor...');
+                console.error('[Google Maps Başarısız] Durum Kodu:', durum, '-> Overpass Yedeğine Geçiliyor.');
                 fetchPlaces(type);
             }
-        })
-        .catch(function(hata) {
-            console.error('[Google Maps Hatası]', hata, '-> Overpass Yedeğine Geçiliyor.');
-            fetchPlaces(type);
         });
+    } catch(e) {
+        console.error('Google textSearch çöktü:', e);
+        fetchPlaces(type);
+    }
 }
 
 // --- OVERPASS API (YEDEK SİSTEM) ---
