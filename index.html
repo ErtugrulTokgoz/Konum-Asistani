@@ -149,8 +149,8 @@
         <button class="mode-btn" id="m-emergency" onclick="applyMode('emergency')"><i class="fa-solid fa-triangle-exclamation"></i> Acil</button>
     </div>
 
-    <!-- İlçe Sponsorları Alanı -->
-    <div id="bolge-sponsorlari" class="sponsor-kutusu">
+    <!-- İlçe Sponsorları Alanı (Banner) -->
+    <div id="bolge-sponsorlari" class="sponsor-kutusu" onclick="openSponsorModal()" style="cursor:pointer; display:none; justify-content:space-between; align-items:center;">
         <!-- Javascript ile doldurulacak -->
     </div>
 
@@ -255,7 +255,21 @@
     </div>
 </div>
 
+<!-- Sponsor Modalı -->
+<div id="sponsor-modal" style="display:none;position:fixed;inset:0;z-index:200;flex-direction:column;justify-content:flex-end;">
+    <div onclick="closeSponsorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
+    <div style="position:relative;z-index:1;background:white;width:100%;max-height:82vh;border-radius:24px 24px 0 0;overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
+            <h3 id="sponsor-modal-title" style="margin:0;font-weight:700;color:#1f2937;font-size:16px;display:flex;align-items:center;gap:8px;">
+                <i class="fa-solid fa-star" style="color:#f59e0b;"></i> Fırsatlar
+            </h3>
+            <button onclick="closeSponsorModal()" style="width:32px;height:32px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;font-size:16px;color:#6b7280;">✕</button>
+        </div>
+        <div id="sponsor-modal-list" style="padding:16px;overflow-y:auto;flex:1;"></div>
+    </div>
+</div>
+
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC5kNeNUbPzjOFA7tkROAsgB_YzOxf9a3g&libraries=places"></script>
-<script src="main.js?v=2026070301"></script>
+<script src="main.js?v=2026070302"></script>
 </body>
 </html>

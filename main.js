@@ -577,7 +577,10 @@ function sendSMS() {
 // --- GEOFENCING & REKLAM (SPONSOR) SİSTEMİ ---
 var sponsorMekanlar = [
     { id: 1, ad: 'Self Food Millet Bahçesi', mesaj: 'ücretsiz içecek ikramı 🥤', lat: 40.7615, lng: 29.9355, ilce: 'İzmit' },
-    { id: 2, ad: 'Mutfak', mesaj: 'günün menüsünde öğrenciye özel indirim 🍽️', lat: 40.7635, lng: 29.9370, ilce: 'İzmit' }
+    { id: 2, ad: 'Mutfak', mesaj: 'günün menüsünde öğrenciye özel indirim 🍽️', lat: 40.7635, lng: 29.9370, ilce: 'İzmit' },
+    { id: 3, ad: 'Meşhur İzmit Pişmaniyecisi', mesaj: '1 Alana 1 Bedava Pişmaniye 🍬', lat: 40.7620, lng: 29.9360, ilce: 'İzmit' },
+    { id: 4, ad: 'Moda Giyim Mağazası', mesaj: 'Tişörtlerde %30 Yaz İndirimi 👕', lat: 40.7640, lng: 29.9380, ilce: 'İzmit' },
+    { id: 5, ad: 'Merkez Kafe', mesaj: 'Filtre Kahve 35 TL ☕', lat: 40.7610, lng: 29.9340, ilce: 'İzmit' }
 ];
 
 function reklamKontroluYap(userLat, userLng) {
@@ -661,38 +664,49 @@ function ilceSponsorlariniGoster(bulunanIlce) {
         }
     }
     
-    // YENİ: Eğer bulunduğun ilçede (Örn: Bahçelievler) kayıtlı sponsor yoksa,
-    // test edebilmen için o ilçenin adını taşıyan dinamik (sahte) sponsorlar üretelim!
+    // YENİ: Eğer bulunduğun ilçede kayıtlı sponsor yoksa dinamik (sahte) sponsorlar üretelim!
     if (eslesenler.length === 0) {
-        eslesenler.push({
-            ad: bulunanIlce + ' Kafe',
-            mesaj: bulunanIlce + ' sakinlerine özel taze kahve',
-            ilce: bulunanIlce
-        });
-        eslesenler.push({
-            ad: bulunanIlce + ' Merkez Lokantası',
-            mesaj: 'bugün tüm menülerde %15 indirim',
-            ilce: bulunanIlce
-        });
+        eslesenler.push({ ad: bulunanIlce + ' Kafe', mesaj: bulunanIlce + ' sakinlerine özel taze kahve', ilce: bulunanIlce });
+        eslesenler.push({ ad: bulunanIlce + ' Merkez Lokantası', mesaj: 'bugün tüm menülerde %15 indirim', ilce: bulunanIlce });
+        eslesenler.push({ ad: bulunanIlce + ' Butik Giyim', mesaj: 'sezon sonu %50 dev indirim', ilce: bulunanIlce });
     }
     
-    // Eğer ilçede sponsor varsa html'e yazdır
+    // Eğer ilçede sponsor varsa html'e yazdır (Banner Modeli)
     if (eslesenler.length > 0) {
-        var html = '<h3 class="sponsor-baslik"><i class="fa-solid fa-star"></i> ' + bulunanIlce + ' İlçesi Özel Fırsatları</h3>';
-        html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+        // Banner metnini oluştur (sadece 1 satır)
+        kutu.innerHTML = '<div style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-star" style="color:#d97706; font-size:20px;"></i><strong style="color:#92400e; font-size:14px;">' + bulunanIlce + ' Bölgesindeki ' + eslesenler.length + ' Fırsatı İncele!</strong></div><i class="fa-solid fa-chevron-right" style="color:#92400e;"></i>';
+        kutu.style.display = 'flex'; // Banner olarak göster
+        
+        // Modal içerisindeki listeyi oluştur
+        var html = '<div style="display:flex; flex-direction:column; gap:12px;">';
         
         for (var j = 0; j < eslesenler.length; j++) {
             var s = eslesenler[j];
             html += '<div class="sponsor-kart">';
-            html += '<div><strong style="color:#111827;">' + s.ad + '</strong><br><span style="font-size:12px; color:#4b5563;">' + s.mesaj + '</span></div>';
-            html += '<button class="sponsor-kart-btn" onclick="alert(\'' + s.ad + ' fırsatı inceleniyor...\')">İncele</button>';
+            html += '<div><strong style="color:#111827;">' + s.ad + '</strong><br><span style="font-size:13px; color:#4b5563;">' + s.mesaj + '</span></div>';
+            html += '<button class="sponsor-kart-btn" onclick="alert(\'' + s.ad + ' fırsatına yönlendiriliyorsunuz...\')">Kullan</button>';
             html += '</div>';
         }
         
         html += '</div>';
-        kutu.innerHTML = html;
-        kutu.style.display = 'block'; // Kutuyu görünür yap
+        
+        var modalList = document.getElementById('sponsor-modal-list');
+        var modalTitle = document.getElementById('sponsor-modal-title');
+        
+        if (modalList) modalList.innerHTML = html;
+        if (modalTitle) modalTitle.innerHTML = '<i class="fa-solid fa-star" style="color:#f59e0b;"></i> ' + bulunanIlce + ' Fırsatları';
+        
     } else {
         kutu.style.display = 'none'; // Sponsor yoksa gizle
     }
+}
+
+function openSponsorModal() {
+    var m = document.getElementById('sponsor-modal');
+    if (m) m.style.display = 'flex';
+}
+
+function closeSponsorModal() {
+    var m = document.getElementById('sponsor-modal');
+    if (m) m.style.display = 'none';
 }
