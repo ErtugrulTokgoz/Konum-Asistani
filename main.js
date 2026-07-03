@@ -248,6 +248,7 @@ function googlePlacesArama(type) {
             }
             renderPlaces(donusturulmus, type, 5000);
         } else {
+            console.error('[Google Maps Başarısız] Durum Kodu:', durum, '-> Overpass Yedeğine Geçiliyor.');
             // Google veri bulamazsa yedeğe (Overpass) geç
             fetchPlaces(type);
         }
