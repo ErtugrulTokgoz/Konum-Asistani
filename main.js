@@ -683,6 +683,21 @@ function ilceSponsorlariniGoster(bulunanIlce) {
         }
     }
     
+    // YENİ: Eğer bulunduğun ilçede (Örn: Bahçelievler) kayıtlı sponsor yoksa,
+    // test edebilmen için o ilçenin adını taşıyan dinamik (sahte) sponsorlar üretelim!
+    if (eslesenler.length === 0) {
+        eslesenler.push({
+            ad: bulunanIlce + ' Kafe',
+            mesaj: bulunanIlce + ' sakinlerine özel taze kahve',
+            ilce: bulunanIlce
+        });
+        eslesenler.push({
+            ad: bulunanIlce + ' Merkez Lokantası',
+            mesaj: 'bugün tüm menülerde %15 indirim',
+            ilce: bulunanIlce
+        });
+    }
+    
     // Eğer ilçede sponsor varsa html'e yazdır
     if (eslesenler.length > 0) {
         var html = '<h3 style="margin:0 0 10px 0; font-size:14px; font-weight:800; color:#b45309;"><i class="fa-solid fa-star"></i> ' + bulunanIlce + ' İlçesi Özel Fırsatları</h3>';
