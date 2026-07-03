@@ -459,7 +459,25 @@ function renderPlaces(items, type, currentRadius) {
         var elon = el.lon || (el.center && el.center.lon);
         if (!elat || !elon) continue;
         var dist = haversine(parseFloat(lat), parseFloat(lng), parseFloat(elat), parseFloat(elon));
-        enriched.push({ el: el, elat: elat, elon: elon, dist: dist });
+        enriched.push({ el: el, elat: elat, elon: elon, dist: dist, isSponsor: false });
+    }
+
+    // YENİ: 300 Metre yakınlıktaki Sponsor Mekanları kategori listesinin (Örn: Yerel Lezzetler) EN TEPESİNE ekle
+    if (typeof sponsorMekanlar !== 'undefined') {
+        for (var s = 0; s < sponsorMekanlar.length; s++) {
+            var sp = sponsorMekanlar[s];
+            var distSp = haversine(parseFloat(lat), parseFloat(lng), parseFloat(sp.lat), parseFloat(sp.lng));
+            // 300 Metre içindeyse listeye ekle
+            if (distSp <= 0.3) {
+                enriched.push({
+                    el: { tags: { name: '⭐ ' + sp.ad + ' (SPONSOR)' } },
+                    elat: sp.lat,
+                    elon: sp.lng,
+                    dist: distSp,
+                    isSponsor: true
+                });
+            }
+        }
     }
 
     if (enriched.length === 0) {
@@ -467,10 +485,17 @@ function renderPlaces(items, type, currentRadius) {
         return;
     }
 
-    enriched.sort(function(a, b) { return a.dist - b.dist; });
+    enriched.sort(function(a, b) { 
+        if (a.isSponsor && !b.isSponsor) return -1;
+        if (!a.isSponsor && b.isSponsor) return 1;
+        return a.dist - b.dist; 
+    });
 
     if (type === 'local_food') {
         enriched.sort(function(a, b) {
+            if (a.isSponsor && !b.isSponsor) return -1;
+            if (!a.isSponsor && b.isSponsor) return 1;
+            
             var aN = (a.el.tags && a.el.tags.name) ? a.el.tags.name.toLowerCase() : '';
             var bN = (b.el.tags && b.el.tags.name) ? b.el.tags.name.toLowerCase() : '';
             var aP = (aN.indexOf('döner') !== -1 || aN.indexOf('pide') !== -1) ? 0 : 1;
