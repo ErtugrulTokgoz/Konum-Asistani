@@ -568,9 +568,8 @@ function sendSMS() {
 
 // --- GEOFENCING & REKLAM (SPONSOR) SİSTEMİ ---
 var sponsorMekanlar = [
-    { id: 1, ad: 'Hoşgör Pastanesi', mesaj: 'taze demlenmiş çay 🍰', lat: 40.762, lng: 29.936, ilce: 'İzmit' },
-    { id: 2, ad: 'Merkez Döner', mesaj: 'öğrenci menüsü 🌯', lat: 40.763, lng: 29.938, ilce: 'İzmit' },
-    { id: 3, ad: 'Beşiktaş Kafe', mesaj: 'kahve indirimi ☕', lat: 41.042, lng: 29.002, ilce: 'Beşiktaş' }
+    { id: 1, ad: 'Self Food Millet Bahçesi', mesaj: 'ücretsiz içecek ikramı 🥤', lat: 40.7615, lng: 29.9355, ilce: 'İzmit' },
+    { id: 2, ad: 'Mutfak', mesaj: 'günün menüsünde öğrenciye özel indirim 🍽️', lat: 40.7635, lng: 29.9370, ilce: 'İzmit' }
 ];
 
 function reklamKontroluYap(userLat, userLng) {
@@ -614,24 +613,8 @@ function reklamKontroluYap(userLat, userLng) {
     // Grup Bildirimi (Smart Batching)
     var birlesikMesaj = yakindakiSponsorlar.join(", ") + " hemen yanı başında!";
 
-    // Ekranda Toast mesajı ile göster
-    var toast = document.createElement('div');
-    toast.innerHTML = '🎁 <strong>Fırsat!</strong><br>' + birlesikMesaj;
-    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:14px 20px;border-radius:16px;font-weight:500;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(217,119,6,.4);width:90%;max-width:350px;text-align:center;animation:slideUp .3s ease;';
-    
-    var kapatBtn = document.createElement('button');
-    kapatBtn.innerHTML = '✕';
-    kapatBtn.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:white;font-weight:bold;cursor:pointer;opacity:0.8;';
-    kapatBtn.onclick = function() {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
-    };
-    toast.appendChild(kapatBtn);
-    document.body.appendChild(toast);
-
-    // 8 saniye sonra otomatik kapanma
-    setTimeout(function() { 
-        if (toast.parentNode) toast.parentNode.removeChild(toast); 
-    }, 8000);
+    // Ekranda basit alert ile göster
+    alert("📍 Etrafında harika fırsatlar var: " + birlesikMesaj);
 
     // Spam koruması için gösterilenleri localStorage'a kaydet
     for (var j = 0; j < yeniGosterilenler.length; j++) {
