@@ -618,8 +618,25 @@ function reklamKontroluYap(userLat, userLng) {
     // Grup Bildirimi (Smart Batching)
     var birlesikMesaj = yakindakiSponsorlar.join(", ") + " hemen yanı başında!";
 
-    // Ekranda basit alert ile göster
-    alert("📍 Etrafında harika fırsatlar var: " + birlesikMesaj);
+    // Gerçek Telefon Bildirimi (Native Notification)
+    var title = "📍 Yakınında Fırsatlar Var!";
+    if ("Notification" in window) {
+        if (Notification.permission === "granted") {
+            new Notification(title, { body: birlesikMesaj, icon: "icon.png" });
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(function (permission) {
+                if (permission === "granted") {
+                    new Notification(title, { body: birlesikMesaj, icon: "icon.png" });
+                } else {
+                    alert(title + " " + birlesikMesaj);
+                }
+            });
+        } else {
+            alert(title + " " + birlesikMesaj); // İzin reddedildiyse eski usül alert
+        }
+    } else {
+        alert(title + " " + birlesikMesaj); // Tarayıcı desteklemiyorsa alert
+    }
 
     // Spam koruması için gösterilenleri localStorage'a kaydet
     for (var j = 0; j < yeniGosterilenler.length; j++) {
