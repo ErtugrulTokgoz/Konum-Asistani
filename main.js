@@ -1,7 +1,7 @@
 /* ===== YAKИНIMDA NE VAR? - main.js ===== */
 'use strict';
 
-var googleService = null;
+
 var API_LIMIT = 9500;
 var aktifApi = 'google';
 
@@ -92,7 +92,6 @@ window.addEventListener('load', function() {
 
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
-    googleService = new google.maps.places.PlacesService(document.createElement('div'));
     sayaciKontrolEt();
     startLocation();
 
@@ -213,46 +212,61 @@ function catClick(type, isDuty) {
 }
 
 
-// --- GOOGLE PLACES ARAMASI ---
+// --- GOOGLE PLACES ARAMASI (YENİ NESİL API) ---
 function googlePlacesArama(type) {
-    if (!googleService) {
+    // Yeni API'nin yüklü olup olmadığını kontrol et
+    if (!window.google || !google.maps || !google.maps.places || !google.maps.places.Place) {
+        console.warn('Google Place API yüklenemedi, yedeğe geçiliyor...');
         fetchPlaces(type);
         return;
     }
 
     var kelime = LABELS[type] || type;
-    var konum = new google.maps.LatLng(lat, lng);
     
     var istek = {
-        location: konum,
-        radius: 5000,
-        query: kelime
+        textQuery: kelime,
+        fields: ['displayName', 'location'],
+        locationBias: { lat: parseFloat(lat), lng: parseFloat(lng) }
     };
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
 
-    googleService.textSearch(istek, function(sonuclar, durum) {
-        if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
-            var donusturulmus = [];
-            for (var i = 0; i < sonuclar.length; i++) {
-                var yer = sonuclar[i];
-                if (!yer.geometry || !yer.geometry.location) continue;
-                
-                donusturulmus.push({
-                    lat: yer.geometry.location.lat(),
-                    lon: yer.geometry.location.lng(),
-                    tags: {
-                        name: yer.name
+    // Yeni nesil arama (Promise)
+    google.maps.places.Place.searchByText(istek)
+        .then(function(yanit) {
+            var sonuclar = yanit.places;
+            
+            if (sonuclar && sonuclar.length > 0) {
+                var donusturulmus = [];
+                for (var i = 0; i < sonuclar.length; i++) {
+                    var yer = sonuclar[i];
+                    if (!yer.location) continue;
+                    
+                    var mekanAdi = 'İsimsiz Yer';
+                    if (yer.displayName) {
+                        mekanAdi = yer.displayName.text || yer.displayName;
+                    } else if (yer.name) {
+                        mekanAdi = yer.name;
                     }
-                });
+                    
+                    donusturulmus.push({
+                        lat: yer.location.lat(),
+                        lon: yer.location.lng(),
+                        tags: {
+                            name: mekanAdi
+                        }
+                    });
+                }
+                renderPlaces(donusturulmus, type, 5000);
+            } else {
+                console.warn('Google sonuç bulamadı, yedeğe geçiliyor...');
+                fetchPlaces(type);
             }
-            renderPlaces(donusturulmus, type, 5000);
-        } else {
-            console.error('[Google Maps Başarısız] Durum Kodu:', durum, '-> Overpass Yedeğine Geçiliyor.');
-            // Google veri bulamazsa yedeğe (Overpass) geç
+        })
+        .catch(function(hata) {
+            console.error('[Google Maps Hatası]', hata, '-> Overpass Yedeğine Geçiliyor.');
             fetchPlaces(type);
-        }
-    });
+        });
 }
 
 // --- OVERPASS API (YEDEK SİSTEM) ---
