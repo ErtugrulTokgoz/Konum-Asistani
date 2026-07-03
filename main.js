@@ -234,7 +234,7 @@ function googlePlacesArama(type) {
     var istek = {
         location: konum,
         radius: 5000,
-        query: kelime
+        keyword: kelime
     };
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
@@ -246,7 +246,7 @@ function googlePlacesArama(type) {
             fetchPlaces(type);
         }, 5000);
 
-        googleService.textSearch(istek, function(sonuclar, durum) {
+        googleService.nearbySearch(istek, function(sonuclar, durum) {
             clearTimeout(zamanAsimi); // Google cevap verdiyse zaman aşımını iptal et
             
             if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
