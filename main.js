@@ -568,13 +568,16 @@ function sendSMS() {
 
 // --- GEOFENCING & REKLAM (SPONSOR) SİSTEMİ ---
 var sponsorMekanlar = [
-    { id: 'spon1', ad: 'Yıldız Kafe', mesaj: 'kahve molası için %20 indirim', lat: 41.0123, lng: 28.9745 },
-    { id: 'spon2', ad: 'Lezzet Dünyası', mesaj: 'öğle yemeği menüsü seni bekliyor', lat: 41.0140, lng: 28.9760 },
-    { id: 'spon3', ad: 'Moda Giyim', mesaj: 'sezon indirimini kaçırma', lat: 41.0110, lng: 28.9750 }
+    { id: 1, ad: 'Hoşgör Pastanesi', mesaj: 'taze demlenmiş çay 🍰', lat: 40.762, lng: 29.936, ilce: 'İzmit' },
+    { id: 2, ad: 'Merkez Döner', mesaj: 'öğrenci menüsü 🌯', lat: 40.763, lng: 29.938, ilce: 'İzmit' },
+    { id: 3, ad: 'Beşiktaş Kafe', mesaj: 'kahve indirimi ☕', lat: 41.042, lng: 29.002, ilce: 'Beşiktaş' }
 ];
 
 function reklamKontroluYap(userLat, userLng) {
     if (!userLat || !userLng) return;
+
+    // İlçe tabanlı sponsorları aramak için Geocoder çağrısı
+    googleIlceBul(userLat, userLng);
 
     var gosterilenler = localStorage.getItem('gosterilen_reklamlar');
     if (gosterilenler) {
@@ -635,4 +638,68 @@ function reklamKontroluYap(userLat, userLng) {
         gosterilenler.push(yeniGosterilenler[j]);
     }
     localStorage.setItem('gosterilen_reklamlar', JSON.stringify(gosterilenler));
+}
+
+// --- İLÇE BAZLI SPONSOR LİSTELEME (REVERSE GEOCODING) ---
+function googleIlceBul(la, lo) {
+    if (!window.google || !google.maps || !google.maps.Geocoder) return;
+    
+    var geocoder = new google.maps.Geocoder();
+    var latlng = { lat: parseFloat(la), lng: parseFloat(lo) };
+    
+    geocoder.geocode({ location: latlng }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+            var ilce = "";
+            var bilesenler = results[0].address_components;
+            
+            // İlçe bilgisini bulmak için basit bir for döngüsü
+            for (var i = 0; i < bilesenler.length; i++) {
+                var tipler = bilesenler[i].types;
+                // Türkiye'deki ilçeler (administrative_area_level_2 veya sublocality_level_1)
+                if (tipler.indexOf("administrative_area_level_2") !== -1 || tipler.indexOf("sublocality_level_1") !== -1) {
+                    ilce = bilesenler[i].long_name;
+                    break;
+                }
+            }
+            
+            if (ilce) {
+                ilceSponsorlariniGoster(ilce);
+            }
+        }
+    });
+}
+
+function ilceSponsorlariniGoster(bulunanIlce) {
+    var kutu = document.getElementById('bolge-sponsorlari');
+    if (!kutu) return;
+    
+    var eslesenler = [];
+    
+    // İlçe adına göre sponsor filtreleme (öğrenci seviyesinde basit döngü)
+    for (var i = 0; i < sponsorMekanlar.length; i++) {
+        var mekan = sponsorMekanlar[i];
+        if (mekan.ilce && mekan.ilce.toLowerCase() === bulunanIlce.toLowerCase()) {
+            eslesenler.push(mekan);
+        }
+    }
+    
+    // Eğer ilçede sponsor varsa html'e yazdır
+    if (eslesenler.length > 0) {
+        var html = '<h3 style="margin:0 0 10px 0; font-size:14px; font-weight:800; color:#b45309;"><i class="fa-solid fa-star"></i> ' + bulunanIlce + ' İlçesi Özel Fırsatları</h3>';
+        html += '<div style="display:flex; flex-direction:column; gap:8px;">';
+        
+        for (var j = 0; j < eslesenler.length; j++) {
+            var s = eslesenler[j];
+            html += '<div style="background:white; padding:10px 14px; border-radius:12px; font-size:13px; color:#374151; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05);">';
+            html += '<div><strong style="color:#111827;">' + s.ad + '</strong><br><span style="font-size:12px; color:#4b5563;">' + s.mesaj + '</span></div>';
+            html += '<button style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer;" onclick="alert(\'' + s.ad + ' fırsatı alındı!\')">İncele</button>';
+            html += '</div>';
+        }
+        
+        html += '</div>';
+        kutu.innerHTML = html;
+        kutu.style.display = 'block'; // Kutuyu görünür yap
+    } else {
+        kutu.style.display = 'none'; // Sponsor yoksa gizle
+    }
 }
