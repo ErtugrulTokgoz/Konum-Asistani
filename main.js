@@ -126,6 +126,7 @@ function startLocation() {
                 lat = pos.coords.latitude;
                 lng = pos.coords.longitude;
                 reverseGeocode(lat, lng);
+                reklamKontroluYap(lat, lng);
             },
             function(err) {
                 console.warn('GPS hatası:', err.code, err.message);
@@ -148,6 +149,7 @@ function tryIpLocation() {
                 lat = parseFloat(d.latitude);
                 lng = parseFloat(d.longitude);
                 setLocText((d.city || 'Tahmini Konum') + ' (Ağ)');
+                reklamKontroluYap(lat, lng);
             } else {
                 setLocText('Konum alınamadı — tıkla');
             }
@@ -195,6 +197,7 @@ function manualLocation() {
                 lat = parseFloat(d[0].lat);
                 lng = parseFloat(d[0].lon);
                 setLocText(q.trim() + ' (Manuel)');
+                reklamKontroluYap(lat, lng);
             } else {
                 alert('Konum bulunamadı. Başka bir ad deneyin.');
                 setLocText('Konum bulunamadı — tıkla');
@@ -561,4 +564,75 @@ function sendSMS() {
     if (lat === null) { alert('Konum bulunamadı.'); return; }
     var url = 'https://www.google.com/maps?q=' + lat + ',' + lng;
     window.open('sms:?body=' + encodeURIComponent('Acil! Konumum: ' + url));
+}
+
+// --- GEOFENCING & REKLAM (SPONSOR) SİSTEMİ ---
+var sponsorMekanlar = [
+    { id: 'spon1', ad: 'Yıldız Kafe', mesaj: 'kahve molası için %20 indirim', lat: 41.0123, lng: 28.9745 },
+    { id: 'spon2', ad: 'Lezzet Dünyası', mesaj: 'öğle yemeği menüsü seni bekliyor', lat: 41.0140, lng: 28.9760 },
+    { id: 'spon3', ad: 'Moda Giyim', mesaj: 'sezon indirimini kaçırma', lat: 41.0110, lng: 28.9750 }
+];
+
+function reklamKontroluYap(userLat, userLng) {
+    if (!userLat || !userLng) return;
+
+    var gosterilenler = localStorage.getItem('gosterilen_reklamlar');
+    if (gosterilenler) {
+        gosterilenler = JSON.parse(gosterilenler);
+    } else {
+        gosterilenler = [];
+    }
+
+    var yakindakiSponsorlar = [];
+    var yeniGosterilenler = [];
+
+    // 300 Metre kuralını kontrol et
+    for (var i = 0; i < sponsorMekanlar.length; i++) {
+        var sponsor = sponsorMekanlar[i];
+        
+        // Spam Koruması: Daha önce gösterildiyse geç
+        if (gosterilenler.indexOf(sponsor.id) !== -1) {
+            continue;
+        }
+
+        var mesafe = haversine(userLat, userLng, sponsor.lat, sponsor.lng);
+        
+        // 300 Metre = 0.3 km
+        if (mesafe <= 0.3) {
+            yakindakiSponsorlar.push(sponsor.ad + "'da " + sponsor.mesaj);
+            yeniGosterilenler.push(sponsor.id);
+        }
+    }
+
+    if (yakindakiSponsorlar.length === 0) {
+        return; // Yakında yeni sponsor yok
+    }
+
+    // Grup Bildirimi (Smart Batching)
+    var birlesikMesaj = yakindakiSponsorlar.join(", ") + " hemen yanı başında!";
+
+    // Ekranda Toast mesajı ile göster
+    var toast = document.createElement('div');
+    toast.innerHTML = '🎁 <strong>Fırsat!</strong><br>' + birlesikMesaj;
+    toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#f59e0b,#d97706);color:white;padding:14px 20px;border-radius:16px;font-weight:500;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(217,119,6,.4);width:90%;max-width:350px;text-align:center;animation:slideUp .3s ease;';
+    
+    var kapatBtn = document.createElement('button');
+    kapatBtn.innerHTML = '✕';
+    kapatBtn.style.cssText = 'position:absolute;top:8px;right:10px;background:none;border:none;color:white;font-weight:bold;cursor:pointer;opacity:0.8;';
+    kapatBtn.onclick = function() {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    };
+    toast.appendChild(kapatBtn);
+    document.body.appendChild(toast);
+
+    // 8 saniye sonra otomatik kapanma
+    setTimeout(function() { 
+        if (toast.parentNode) toast.parentNode.removeChild(toast); 
+    }, 8000);
+
+    // Spam koruması için gösterilenleri localStorage'a kaydet
+    for (var j = 0; j < yeniGosterilenler.length; j++) {
+        gosterilenler.push(yeniGosterilenler[j]);
+    }
+    localStorage.setItem('gosterilen_reklamlar', JSON.stringify(gosterilenler));
 }
