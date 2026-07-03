@@ -38,7 +38,51 @@
             border-top-color: #3b82f6; border-radius: 50%;
             animation: spin 0.8s linear infinite; display: inline-block;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Sponsor Kutusu Tasarımı */
+        .sponsor-kutusu {
+            display: none; 
+            margin-bottom: 18px; 
+            background: linear-gradient(135deg, #fffbeb, #fef3c7); 
+            border-radius: 16px; 
+            padding: 16px; 
+            border: 1px solid #fde68a;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+        }
+        .sponsor-baslik {
+            margin: 0 0 12px 0; 
+            font-size: 14px; 
+            font-weight: 800; 
+            color: #d97706;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sponsor-kart {
+            background: white; 
+            padding: 12px 14px; 
+            border-radius: 12px; 
+            font-size: 13px; 
+            color: #374151; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border: 1px solid #fef3c7;
+        }
+        .sponsor-kart-btn {
+            background: #f59e0b; 
+            color: white; 
+            border: none; 
+            padding: 8px 14px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 11px; 
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sponsor-kart-btn:active { background: #d97706; }
 
         /* Splash Screen */
         #splash-screen {
@@ -101,7 +145,7 @@
     </div>
 
     <!-- İlçe Sponsorları Alanı -->
-    <div id="bolge-sponsorlari" style="display:none; margin-bottom:18px; background:linear-gradient(135deg, #fef3c7, #fde68a); border-radius:16px; padding:16px; border:1px solid #fcd34d;">
+    <div id="bolge-sponsorlari" class="sponsor-kutusu">
         <!-- Javascript ile doldurulacak -->
     </div>
 

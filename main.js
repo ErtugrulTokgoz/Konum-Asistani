@@ -683,14 +683,14 @@ function ilceSponsorlariniGoster(bulunanIlce) {
     
     // Eğer ilçede sponsor varsa html'e yazdır
     if (eslesenler.length > 0) {
-        var html = '<h3 style="margin:0 0 10px 0; font-size:14px; font-weight:800; color:#b45309;"><i class="fa-solid fa-star"></i> ' + bulunanIlce + ' İlçesi Özel Fırsatları</h3>';
+        var html = '<h3 class="sponsor-baslik"><i class="fa-solid fa-star"></i> ' + bulunanIlce + ' İlçesi Özel Fırsatları</h3>';
         html += '<div style="display:flex; flex-direction:column; gap:8px;">';
         
         for (var j = 0; j < eslesenler.length; j++) {
             var s = eslesenler[j];
-            html += '<div style="background:white; padding:10px 14px; border-radius:12px; font-size:13px; color:#374151; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 3px rgba(0,0,0,0.05);">';
+            html += '<div class="sponsor-kart">';
             html += '<div><strong style="color:#111827;">' + s.ad + '</strong><br><span style="font-size:12px; color:#4b5563;">' + s.mesaj + '</span></div>';
-            html += '<button style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:8px; font-weight:700; font-size:11px; cursor:pointer;" onclick="alert(\'' + s.ad + ' fırsatı alındı!\')">İncele</button>';
+            html += '<button class="sponsor-kart-btn" onclick="alert(\'' + s.ad + ' fırsatı inceleniyor...\')">İncele</button>';
             html += '</div>';
         }
         
