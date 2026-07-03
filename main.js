@@ -625,30 +625,26 @@ function reklamKontroluYap(userLat, userLng) {
 
 // --- İLÇE BAZLI SPONSOR LİSTELEME (REVERSE GEOCODING) ---
 function googleIlceBul(la, lo) {
-    if (!window.google || !google.maps || !google.maps.Geocoder) return;
-    
-    var geocoder = new google.maps.Geocoder();
-    var latlng = { lat: parseFloat(la), lng: parseFloat(lo) };
-    
-    geocoder.geocode({ location: latlng }, function(results, status) {
-        if (status === 'OK' && results[0]) {
-            var ilce = "";
-            var bilesenler = results[0].address_components;
+    // Google Geocoding API kısıtlamalarına (yetki hatası) takılmamak için
+    // ilçe bulma işlemini anahtarsız ve her zaman çalışan Nominatim'e çevirdik.
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + la + '&lon=' + lo + '&zoom=18&addressdetails=1', {
+        headers: { 'Accept-Language': 'tr' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d && d.address) {
+            var a = d.address;
+            // Nominatim'de Türkiye ilçeleri genelde town, county, city_district veya suburb olarak döner
+            var ilce = a.town || a.county || a.city_district || a.suburb || a.city || "Merkez";
             
-            // İlçe bilgisini bulmak için basit bir for döngüsü
-            for (var i = 0; i < bilesenler.length; i++) {
-                var tipler = bilesenler[i].types;
-                // Türkiye'deki ilçeler (administrative_area_level_2 veya sublocality_level_1)
-                if (tipler.indexOf("administrative_area_level_2") !== -1 || tipler.indexOf("sublocality_level_1") !== -1) {
-                    ilce = bilesenler[i].long_name;
-                    break;
-                }
-            }
+            // "İlçesi" veya "District" gibi fazlalıkları temizle
+            ilce = ilce.replace(" İlçesi", "").replace(" District", "");
             
-            if (ilce) {
-                ilceSponsorlariniGoster(ilce);
-            }
+            ilceSponsorlariniGoster(ilce);
         }
+    })
+    .catch(function(e) {
+        console.warn("İlçe bulunamadı:", e);
     });
 }
 
