@@ -150,6 +150,7 @@ function tryIpLocation() {
                 lat = parseFloat(d.latitude);
                 lng = parseFloat(d.longitude);
                 setLocText((d.city || 'Tahmini Konum') + ' (Ağ)');
+                window.bulunanGuncelIlce = d.city || 'Merkez';
                 reklamKontroluYap(lat, lng);
                 ilceSponsorlariniGoster(d.city || 'Merkez');
             } else {
@@ -178,6 +179,7 @@ function reverseGeocode(la, lo) {
             // İlçe bilgisini buradan doğrudan sponsor fonksiyonuna gönderiyoruz
             var ilce = a.town || a.county || a.city_district || a.suburb || a.city || "Merkez";
             ilce = ilce.replace(" İlçesi", "").replace(" District", "");
+            window.bulunanGuncelIlce = ilce;
             ilceSponsorlariniGoster(ilce);
         } else {
             setLocText(la.toFixed(3) + ', ' + lo.toFixed(3));
@@ -204,6 +206,7 @@ function manualLocation() {
                 lat = parseFloat(d[0].lat);
                 lng = parseFloat(d[0].lon);
                 setLocText(q.trim() + ' (Manuel)');
+                window.bulunanGuncelIlce = q.trim();
                 reklamKontroluYap(lat, lng);
                 ilceSponsorlariniGoster(q.trim());
             } else {
@@ -459,25 +462,7 @@ function renderPlaces(items, type, currentRadius) {
         var elon = el.lon || (el.center && el.center.lon);
         if (!elat || !elon) continue;
         var dist = haversine(parseFloat(lat), parseFloat(lng), parseFloat(elat), parseFloat(elon));
-        enriched.push({ el: el, elat: elat, elon: elon, dist: dist, isSponsor: false });
-    }
-
-    // YENİ: 300 Metre yakınlıktaki Sponsor Mekanları kategori listesinin (Örn: Yerel Lezzetler) EN TEPESİNE ekle
-    if (typeof sponsorMekanlar !== 'undefined') {
-        for (var s = 0; s < sponsorMekanlar.length; s++) {
-            var sp = sponsorMekanlar[s];
-            var distSp = haversine(parseFloat(lat), parseFloat(lng), parseFloat(sp.lat), parseFloat(sp.lng));
-            // 300 Metre içindeyse listeye ekle
-            if (distSp <= 0.3) {
-                enriched.push({
-                    el: { tags: { name: '⭐ ' + sp.ad + ' (SPONSOR)' } },
-                    elat: sp.lat,
-                    elon: sp.lng,
-                    dist: distSp,
-                    isSponsor: true
-                });
-            }
-        }
+        enriched.push({ el: el, elat: elat, elon: elon, dist: dist });
     }
 
     if (enriched.length === 0) {
@@ -485,17 +470,10 @@ function renderPlaces(items, type, currentRadius) {
         return;
     }
 
-    enriched.sort(function(a, b) { 
-        if (a.isSponsor && !b.isSponsor) return -1;
-        if (!a.isSponsor && b.isSponsor) return 1;
-        return a.dist - b.dist; 
-    });
+    enriched.sort(function(a, b) { return a.dist - b.dist; });
 
     if (type === 'local_food') {
         enriched.sort(function(a, b) {
-            if (a.isSponsor && !b.isSponsor) return -1;
-            if (!a.isSponsor && b.isSponsor) return 1;
-            
             var aN = (a.el.tags && a.el.tags.name) ? a.el.tags.name.toLowerCase() : '';
             var bN = (b.el.tags && b.el.tags.name) ? b.el.tags.name.toLowerCase() : '';
             var aP = (aN.indexOf('döner') !== -1 || aN.indexOf('pide') !== -1) ? 0 : 1;
@@ -611,6 +589,51 @@ var sponsorMekanlar = [
 function reklamKontroluYap(userLat, userLng) {
     if (!userLat || !userLng) return;
 
+    // Gerçek mekanları sponsor olarak eklemek için dinamik sorgu atalım (300m çapında Kafe/Restoran/Giyim)
+    var query = '[out:json][timeout:10];(node["amenity"~"cafe|restaurant|fast_food"](around:300,' + userLat + ',' + userLng + ');node["shop"~"clothes"](around:300,' + userLat + ',' + userLng + '););out body 5;';
+    fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: query
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d && d.elements && d.elements.length > 0) {
+            var msgs = ["Günün menüsünde %20 indirim 🍽️", "Ücretsiz kahve ikramı ☕", "Sezon sonu dev indirim 👕", "Öğrenciye %15 indirim!"];
+            for (var i = 0; i < d.elements.length; i++) {
+                var el = d.elements[i];
+                if (!el.tags || !el.tags.name) continue;
+                var name = el.tags.name;
+                
+                var exists = false;
+                for (var j = 0; j < sponsorMekanlar.length; j++) {
+                    if (sponsorMekanlar[j].ad === name) { exists = true; break; }
+                }
+                
+                if (!exists) {
+                    var randMsg = msgs[i % msgs.length];
+                    sponsorMekanlar.push({
+                        id: 'gercek_' + el.id,
+                        ad: name,
+                        mesaj: randMsg,
+                        lat: el.lat,
+                        lng: el.lon,
+                        ilce: 'Gerçek' // Dinamik olarak eklenen gerçek mekan bayrağı
+                    });
+                }
+            }
+        }
+    })
+    .catch(function(e) { console.warn("Gerçek sponsorlar çekilemedi", e); })
+    .finally(function() {
+        bildirimiAtesle(userLat, userLng);
+        // Eğer ilçe bulunduysa banner'ı güncelle (gerçek mekanlar dahil olsun)
+        if (window.bulunanGuncelIlce) {
+            ilceSponsorlariniGoster(window.bulunanGuncelIlce);
+        }
+    });
+}
+
+function bildirimiAtesle(userLat, userLng) {
     var gosterilenler = localStorage.getItem('gosterilen_reklamlar');
     if (gosterilenler) {
         gosterilenler = JSON.parse(gosterilenler);
@@ -681,10 +704,10 @@ function ilceSponsorlariniGoster(bulunanIlce) {
     
     var eslesenler = [];
     
-    // İlçe adına göre sponsor filtreleme (öğrenci seviyesinde basit döngü)
+    // İlçe adına göre veya dinamik gerçek sponsor filtreleme
     for (var i = 0; i < sponsorMekanlar.length; i++) {
         var mekan = sponsorMekanlar[i];
-        if (mekan.ilce && mekan.ilce.toLowerCase() === bulunanIlce.toLowerCase()) {
+        if (mekan.ilce === 'Gerçek' || (mekan.ilce && mekan.ilce.toLowerCase() === bulunanIlce.toLowerCase())) {
             eslesenler.push(mekan);
         }
     }
