@@ -147,9 +147,11 @@ function tryIpLocation() {
         .then(function(d) {
             if (d && d.latitude && d.longitude) {
                 lat = parseFloat(d.latitude);
+                lat = parseFloat(d.latitude);
                 lng = parseFloat(d.longitude);
                 setLocText((d.city || 'Tahmini Konum') + ' (Ağ)');
                 reklamKontroluYap(lat, lng);
+                ilceSponsorlariniGoster(d.city || 'Merkez');
             } else {
                 setLocText('Konum alınamadı — tıkla');
             }
@@ -172,6 +174,11 @@ function reverseGeocode(la, lo) {
             if (a.suburb) parts.push(a.suburb);
             if (a.city || a.town) parts.push(a.city || a.town);
             setLocText(parts.join(', ') || 'Konum Alındı');
+            
+            // İlçe bilgisini buradan doğrudan sponsor fonksiyonuna gönderiyoruz
+            var ilce = a.town || a.county || a.city_district || a.suburb || a.city || "Merkez";
+            ilce = ilce.replace(" İlçesi", "").replace(" District", "");
+            ilceSponsorlariniGoster(ilce);
         } else {
             setLocText(la.toFixed(3) + ', ' + lo.toFixed(3));
         }
@@ -198,6 +205,7 @@ function manualLocation() {
                 lng = parseFloat(d[0].lon);
                 setLocText(q.trim() + ' (Manuel)');
                 reklamKontroluYap(lat, lng);
+                ilceSponsorlariniGoster(q.trim());
             } else {
                 alert('Konum bulunamadı. Başka bir ad deneyin.');
                 setLocText('Konum bulunamadı — tıkla');
@@ -575,9 +583,6 @@ var sponsorMekanlar = [
 function reklamKontroluYap(userLat, userLng) {
     if (!userLat || !userLng) return;
 
-    // İlçe tabanlı sponsorları aramak için Geocoder çağrısı
-    googleIlceBul(userLat, userLng);
-
     var gosterilenler = localStorage.getItem('gosterilen_reklamlar');
     if (gosterilenler) {
         gosterilenler = JSON.parse(gosterilenler);
@@ -623,30 +628,7 @@ function reklamKontroluYap(userLat, userLng) {
     localStorage.setItem('gosterilen_reklamlar', JSON.stringify(gosterilenler));
 }
 
-// --- İLÇE BAZLI SPONSOR LİSTELEME (REVERSE GEOCODING) ---
-function googleIlceBul(la, lo) {
-    // Google Geocoding API kısıtlamalarına (yetki hatası) takılmamak için
-    // ilçe bulma işlemini anahtarsız ve her zaman çalışan Nominatim'e çevirdik.
-    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + la + '&lon=' + lo + '&zoom=18&addressdetails=1', {
-        headers: { 'Accept-Language': 'tr' }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if (d && d.address) {
-            var a = d.address;
-            // Nominatim'de Türkiye ilçeleri genelde town, county, city_district veya suburb olarak döner
-            var ilce = a.town || a.county || a.city_district || a.suburb || a.city || "Merkez";
-            
-            // "İlçesi" veya "District" gibi fazlalıkları temizle
-            ilce = ilce.replace(" İlçesi", "").replace(" District", "");
-            
-            ilceSponsorlariniGoster(ilce);
-        }
-    })
-    .catch(function(e) {
-        console.warn("İlçe bulunamadı:", e);
-    });
-}
+
 
 function ilceSponsorlariniGoster(bulunanIlce) {
     var kutu = document.getElementById('bolge-sponsorlari');
