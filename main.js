@@ -1,10 +1,7 @@
 /* ===== YAKИНIMDA NE VAR? - main.js ===== */
 'use strict';
 
-var aktifApi = 'google';
-var AYLIK_LIMIT = 9500;
-var buAy = new Date().toISOString().slice(0, 7);
-var dbUrl = 'https://konumasistani-default-rtdb.europe-west1.firebasedatabase.app/sorgu_' + buAy + '.json';
+var googleService = null;
 
 // --- Global State ---
 var lat = null;
@@ -72,7 +69,7 @@ window.addEventListener('load', function() {
 
 // --- Sayfa Hazır ---
 document.addEventListener('DOMContentLoaded', function() {
-    baslangictaSayaciAl();
+    googleService = new google.maps.places.PlacesService(document.createElement('div'));
 
     // Konum al
     startLocation();
@@ -199,125 +196,56 @@ function catClick(type, isDuty) {
     openModal(type);
 }
 
-// --- HİBRİT API SİSTEMİ ---
-function baslangictaSayaciAl() {
-    if (dbUrl === '') {
-        aktifApi = 'google';
-        return;
-    }
-    
-    fetch(dbUrl)
-        .then(function(cevap) {
-            if (!cevap.ok) {
-                throw new Error('Bağlantı hatası');
-            }
-            return cevap.json();
-        })
-        .then(function(sayac) {
-            if (sayac === null || isNaN(sayac)) {
-                sayac = 0;
-            }
-            
-            if (sayac < AYLIK_LIMIT) {
-                aktifApi = 'google';
-            } else {
-                aktifApi = 'overpass';
-            }
-        })
-        .catch(function(hata) {
-            // Hata olsa bile ana önceliğimiz olan Google'ı kullanalım
-            aktifApi = 'google';
-        });
-}
 
-function arkaPlandaSayaciArtir() {
-    if (dbUrl === '') {
-        return;
-    }
-    
-    fetch(dbUrl)
-        .then(function(cevap) {
-            return cevap.json();
-        })
-        .then(function(sayac) {
-            if (sayac === null) {
-                sayac = 0;
-            }
-            
-            var yeniSayac = sayac + 1;
-            
-            fetch(dbUrl, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(yeniSayac)
-            }).catch(function(hata) {
-                // Hata olursa hiçbir şey yapma
-            });
-        })
-        .catch(function(hata) {
-            // Hata olursa hiçbir şey yapma
-        });
-}
+
+
 
 function googlePlacesArama(type) {
-    if (!window.google || !window.google.maps || !window.google.maps.places || !window.google.maps.places.Place) {
-        fetchPlaces(type);
+    if (!googleService) {
+        var list = document.getElementById('result-list');
+        if (list) list.innerHTML = '<p style="text-align:center;padding:30px;color:#ef4444;">Google Maps servisi yüklenemedi.</p>';
         return;
     }
 
     var kelime = LABELS[type] || type;
+    var konum = new google.maps.LatLng(lat, lng);
     
     var istek = {
-        textQuery: kelime,
-        fields: ['displayName', 'location'],
-        locationBias: { lat: parseFloat(lat), lng: parseFloat(lng) }
+        location: konum,
+        radius: 5000,
+        query: kelime
     };
 
-    google.maps.places.Place.searchByText(istek)
-        .then(function(yanit) {
-            var sonuclar = yanit.places;
-            
-            if (sonuclar && sonuclar.length > 0) {
-                var donusturulmus = [];
-                for (var i = 0; i < sonuclar.length; i++) {
-                    var yer = sonuclar[i];
-                    if (!yer.location) continue;
-                    
-                    var mekanAdi = 'İsimsiz Yer';
-                    if (yer.displayName) {
-                        mekanAdi = yer.displayName.text || yer.displayName;
-                    } else if (yer.name) {
-                        mekanAdi = yer.name;
+    googleService.textSearch(istek, function(sonuclar, durum) {
+        if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
+            var donusturulmus = [];
+            for (var i = 0; i < sonuclar.length; i++) {
+                var yer = sonuclar[i];
+                if (!yer.geometry || !yer.geometry.location) continue;
+                
+                donusturulmus.push({
+                    lat: yer.geometry.location.lat(),
+                    lon: yer.geometry.location.lng(),
+                    tags: {
+                        name: yer.name
                     }
-                    
-                    donusturulmus.push({
-                        lat: yer.location.lat(),
-                        lon: yer.location.lng(),
-                        tags: {
-                            name: mekanAdi
-                        }
-                    });
-                }
-                renderPlaces(donusturulmus, type, 5000);
-            } else {
-                fetchPlaces(type);
+                });
             }
-        })
-        .catch(function(hata) {
-            fetchPlaces(type);
-        });
+            renderPlaces(donusturulmus, type, 5000);
+        } else {
+            var list = document.getElementById('result-list');
+            if (list) {
+                var mapsSearch = 'https://www.google.com/maps/search/' + encodeURIComponent(kelime) + '/@' + lat + ',' + lng + ',14z';
+                list.innerHTML = '<div style="text-align:center;padding:30px;">' +
+                    '<p style="color:#ef4444;margin-bottom:12px;">Google Maps sonuç bulamadı (veya hata verdi).</p>' +
+                    '<a href="' + mapsSearch + '" target="_blank" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:700;font-size:13px;">Google Haritalar\'da Ara</a>' +
+                    '</div>';
+            }
+        }
+    });
 }
 
-function fetchPlacesHybrid(type) {
-    if (aktifApi === 'google') {
-        googlePlacesArama(type);
-        arkaPlandaSayaciArtir();
-    } else if (aktifApi === 'overpass') {
-        fetchPlaces(type);
-    }
-}
+
 
 // --- MODAL ---
 var LABELS = {
@@ -349,150 +277,13 @@ function openModal(type) {
     list.innerHTML = '<div style="text-align:center;padding:40px;"><span class="loader"></span><p style="color:#6b7280;margin-top:12px;font-size:13px;">Aranıyor...</p></div>';
     modal.style.display = 'flex';
 
-    fetchPlacesHybrid(type);
+    googlePlacesArama(type);
 }
 
 function closeModal() {
     var modal = document.getElementById('result-modal');
     if (modal) modal.style.display = 'none';
 }
-
-// --- OVERPASS API (nwr kısaltması ile hızlandırılmış) ---
-function nwr(filter, r, la, lo) {
-    return 'nwr' + filter + '(around:' + r + ',' + la + ',' + lo + ');';
-}
-
-// Önbellek yardımcıları (1 dakika geçerli)
-function getCache(key) {
-    var cached = sessionStorage.getItem('osm_cache_' + key);
-    if (!cached) return null;
-    var data = JSON.parse(cached);
-    if (Date.now() - data.time > 60000) {
-        sessionStorage.removeItem('osm_cache_' + key);
-        return null;
-    }
-    return data.elements;
-}
-
-function setCache(key, elements) {
-    var data = { time: Date.now(), elements: elements };
-    sessionStorage.setItem('osm_cache_' + key, JSON.stringify(data));
-}
-
-function fetchPlaces(type, radiusOverride) {
-    // Koordinat kontrolü — null gelirse hata göster
-    if (lat === null || lng === null || isNaN(lat) || isNaN(lng)) {
-        var list = document.getElementById('result-list');
-        if (list) list.innerHTML = '<p style="text-align:center;padding:30px;color:#ef4444;">Konum koordinatı alınamadı. Lütfen konumu yenileyin.</p>';
-        return;
-    }
-
-    var latF = parseFloat(lat).toFixed(6);
-    var lngF = parseFloat(lng).toFixed(6);
-    
-    // Önbellek kontrolü (radiusOverride yoksa kullan)
-    if (!radiusOverride) {
-        var cachedData = getCache(type);
-        if (cachedData) {
-            console.log('[Cache Hit]', type);
-            renderPlaces(cachedData, type);
-            return;
-        }
-    }
-
-    // Yarıçap mantığı: Başlangıç 5000m, override varsa onu kullan
-    var r = radiusOverride || 5000;
-    
-    var q = '';
-
-    switch(type) {
-        case 'atm':
-            q = nwr('["amenity"="atm"]', r, latF, lngF);
-            break;
-        case 'hospital':
-            q = nwr('["amenity"~"hospital|clinic"]', r, latF, lngF);
-            break;
-        case 'restaurant':
-            // Tek bir tarama ile tüm yeme-içme ve dükkanları bul (Hız için kritik)
-            q = nwr('[~"amenity|shop"~"restaurant|cafe|fast_food|kiosk|bakery"]', r, latF, lngF);
-            break;
-        case 'local_food':
-            // Agresif ama tekil nwr sorgusu
-            q = nwr('[~"amenity|cuisine|name"~"fast_food|restaurant|kebab|doner|pide|lahmacun|Döner|Kebap|Büfe",i]', r, latF, lngF);
-            break;
-        case 'supermarket':
-            q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF);
-            break;
-        case 'clothes':
-            q = nwr('["shop"~"clothes|fashion"]', r, latF, lngF);
-            break;
-        case 'tourism':
-            q = nwr('["tourism"~"attraction|museum|viewpoint"]', r, latF, lngF);
-            break;
-        case 'hotel':
-            q = nwr('["tourism"~"hotel|motel"]', r, latF, lngF);
-            break;
-        case 'post_office':
-            q = nwr('["amenity"="post_office"]', r, latF, lngF);
-            break;
-        case 'assembly_point':
-            q = nwr('["emergency"="assembly_point"]', r, latF, lngF);
-            break;
-        case 'police':
-            q = nwr('["amenity"="police"]', r, latF, lngF);
-            break;
-        case 'pharmacy':
-            q = nwr('["amenity"="pharmacy"]', r, latF, lngF);
-            break;
-        case 'fuel':
-            q = nwr('["amenity"="fuel"]', r, latF, lngF);
-            break;
-        case 'parking':
-            q = nwr('["amenity"="parking"]', r, latF, lngF);
-            break;
-        case 'taxi':
-            q = nwr('["amenity"="taxi"]', r, latF, lngF);
-            break;
-        default:
-            q = nwr('["amenity"="' + type + '"]', r, latF, lngF);
-    }
-
-    // [timeout:10] ve out 50 limitleri eklendi
-    var fullQ = '[out:json][timeout:10];(' + q + ');out center 50;';
-    console.log('[Overpass Sorgu]', fullQ);
-
-    var currentType = type;
-    var endpoint = 'https://overpass-api.de/api/interpreter';
-
-    fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'data=' + encodeURIComponent(fullQ)
-    })
-        .then(function(res) {
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-        })
-        .then(function(data) {
-            var elements = data.elements || [];
-            if (!radiusOverride) setCache(currentType, elements);
-            renderPlaces(elements, currentType, r);
-        })
-        .catch(function(e) {
-            console.error('[Overpass Hata]', e);
-            var list = document.getElementById('result-list');
-            if (list) {
-                var label = LABELS[currentType] || currentType;
-                var mapsSearch = 'https://www.google.com/maps/search/' +
-                    encodeURIComponent(label) + '/@' + latF + ',' + lngF + ',14z';
-                list.innerHTML = '<div style="text-align:center;padding:30px;">' +
-                    '<p style="color:#ef4444;margin-bottom:12px;">Sunucu hatası: ' + e.message + '</p>' +
-                    '<a href="' + mapsSearch + '" target="_blank" style="background:#3b82f6;color:white;padding:10px 20px;border-radius:12px;text-decoration:none;font-weight:700;font-size:13px;">Google Maps\'te Ara</a>' +
-                    '</div>';
-            }
-        });
-}
-
 
 
 // Haversine mesafe hesaplama (km)
@@ -522,11 +313,7 @@ function renderPlaces(items, type, currentRadius) {
         var html = '<div style="text-align:center;padding:30px;">';
         html += '<p style="color:#9ca3af;margin-bottom:16px;font-size:14px;">5km içinde sonuç bulunamadı.</p>';
         
-        // "Daha geniş alanda ara" butonu (75km)
-        if (currentRadius < 75000) {
-            html += '<button onclick="fetchPlaces(\'' + type + '\', 75000)" style="display:block;width:100%;background:#3b82f6;color:white;padding:14px;border-radius:14px;border:none;font-weight:700;margin-bottom:10px;cursor:pointer;">' +
-                    '🔍 75km Çapında Daha Geniş Ara</button>';
-        }
+
 
         // local_food icin ozel ve buyuk fallback butonu
         if (type === 'local_food') {
