@@ -285,9 +285,15 @@ function googlePlacesArama(type) {
     
     var istek = {
         location: konum,
-        rankBy: google.maps.places.RankBy.DISTANCE,
-        keyword: kelime
+        rankBy: google.maps.places.RankBy.DISTANCE
     };
+
+    if (type === 'supermarket') {
+        istek.type = 'store';
+        istek.keyword = 'market OR bakkal OR tekel OR süpermarket OR büfe';
+    } else {
+        istek.keyword = kelime;
+    }
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
 
