@@ -591,46 +591,71 @@ function reklamKontroluYap(userLat, userLng) {
 
     // Gerçek mekanları sponsor olarak eklemek için dinamik sorgu atalım (300m çapında Kafe/Restoran/Giyim)
     var query = '[out:json][timeout:10];(node["amenity"~"cafe|restaurant|fast_food"](around:300,' + userLat + ',' + userLng + ');node["shop"~"clothes"](around:300,' + userLat + ',' + userLng + '););out body 5;';
-    fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: query
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-        if (d && d.elements && d.elements.length > 0) {
-            var msgs = ["Günün menüsünde %20 indirim 🍽️", "Ücretsiz kahve ikramı ☕", "Sezon sonu dev indirim 👕", "Öğrenciye %15 indirim!"];
-            for (var i = 0; i < d.elements.length; i++) {
-                var el = d.elements[i];
-                if (!el.tags || !el.tags.name) continue;
-                var name = el.tags.name;
-                
-                var exists = false;
-                for (var j = 0; j < sponsorMekanlar.length; j++) {
-                    if (sponsorMekanlar[j].ad === name) { exists = true; break; }
-                }
-                
-                if (!exists) {
-                    var randMsg = msgs[i % msgs.length];
-                    sponsorMekanlar.push({
-                        id: 'gercek_' + el.id,
-                        ad: name,
-                        mesaj: randMsg,
-                        lat: el.lat,
-                        lng: el.lon,
-                        ilce: 'Gerçek' // Dinamik olarak eklenen gerçek mekan bayrağı
-                    });
+    
+    var overpassEndpoints = [
+        'https://overpass-api.de/api/interpreter',
+        'https://lz4.overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter'
+    ];
+
+    function tryFetch(index) {
+        if (index >= overpassEndpoints.length) {
+            console.warn("Gerçek sponsorlar hiçbir yedek sunucudan çekilemedi.");
+            tamamla();
+            return;
+        }
+
+        fetch(overpassEndpoints[index], {
+            method: 'POST',
+            body: query
+        })
+        .then(function(r) { 
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json(); 
+        })
+        .then(function(d) {
+            if (d && d.elements && d.elements.length > 0) {
+                var msgs = ["Günün menüsünde %20 indirim 🍽️", "Ücretsiz kahve ikramı ☕", "Sezon sonu dev indirim 👕", "Öğrenciye %15 indirim!"];
+                for (var i = 0; i < d.elements.length; i++) {
+                    var el = d.elements[i];
+                    if (!el.tags || !el.tags.name) continue;
+                    var name = el.tags.name;
+                    
+                    var exists = false;
+                    for (var j = 0; j < sponsorMekanlar.length; j++) {
+                        if (sponsorMekanlar[j].ad === name) { exists = true; break; }
+                    }
+                    
+                    if (!exists) {
+                        var randMsg = msgs[i % msgs.length];
+                        sponsorMekanlar.push({
+                            id: 'gercek_' + el.id,
+                            ad: name,
+                            mesaj: randMsg,
+                            lat: el.lat,
+                            lng: el.lon,
+                            ilce: 'Gerçek' // Dinamik olarak eklenen gerçek mekan bayrağı
+                        });
+                    }
                 }
             }
-        }
-    })
-    .catch(function(e) { console.warn("Gerçek sponsorlar çekilemedi", e); })
-    .finally(function() {
+            tamamla();
+        })
+        .catch(function(e) { 
+            console.warn(overpassEndpoints[index] + " başarısız oldu:", e.message); 
+            tryFetch(index + 1); 
+        });
+    }
+
+    function tamamla() {
         bildirimiAtesle(userLat, userLng);
         // Eğer ilçe bulunduysa banner'ı güncelle (gerçek mekanlar dahil olsun)
         if (window.bulunanGuncelIlce) {
             ilceSponsorlariniGoster(window.bulunanGuncelIlce);
         }
-    });
+    }
+
+    tryFetch(0);
 }
 
 function bildirimiAtesle(userLat, userLng) {
