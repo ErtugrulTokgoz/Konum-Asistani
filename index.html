@@ -218,10 +218,14 @@
             <button onclick="closeFeedback()" style="width:32px;height:32px;border-radius:50%;background:#f1f5f9;border:none;cursor:pointer;font-size:18px;color:#6b7280;display:flex;align-items:center;justify-content:center;">✕</button>
         </div>
         <!-- Form -->
-        <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <form id="feedback-form" onsubmit="submitFeedback(event)" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <div>
+                <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">E-Posta (İsteğe Bağlı)</label>
+                <input type="email" name="email" id="fb-email" placeholder="ornek@mail.com" style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:#fafafa;outline:none;font-family:inherit;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'">
+            </div>
             <div>
                 <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Konu</label>
-                <select id="fb-topic" style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:white;outline:none;font-family:inherit;cursor:pointer;">
+                <select name="konu" id="fb-topic" style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:white;outline:none;font-family:inherit;cursor:pointer;">
                     <option value="bug">🐛 Hata Bildirimi</option>
                     <option value="suggestion">💡 Öneri</option>
                     <option value="other">💬 Diğer</option>
@@ -229,15 +233,15 @@
             </div>
             <div>
                 <label style="display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:6px;">Mesajınız</label>
-                <textarea id="fb-message" rows="4" placeholder="Mesajınızı buraya yazın..." style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:#fafafa;outline:none;resize:none;font-family:inherit;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+                <textarea name="mesaj" id="fb-message" rows="4" placeholder="Mesajınızı buraya yazın..." required style="width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:13px;color:#374151;background:#fafafa;outline:none;resize:none;font-family:inherit;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
             </div>
             <div style="display:flex;gap:10px;">
-                <button onclick="closeFeedback()" style="flex:1;padding:12px;background:#f1f5f9;color:#374151;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">Vazgeç</button>
-                <button onclick="submitFeedback(event)" style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,.4);display:flex;align-items:center;justify-content:center;gap:6px;">
+                <button type="button" onclick="closeFeedback()" style="flex:1;padding:12px;background:#f1f5f9;color:#374151;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;">Vazgeç</button>
+                <button type="submit" id="fb-submit-btn" style="flex:2;padding:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,.4);display:flex;align-items:center;justify-content:center;gap:6px;">
                     <i class="fa-solid fa-paper-plane"></i> Gönder
                 </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 

@@ -53,18 +53,14 @@ function closeFeedbackIfBackdrop(e) {
 function submitFeedback(e) {
     if (e) e.preventDefault(); // Sayfa yenilemesini veya dışarı atmasını engelle
 
-    var msgEl = document.getElementById('fb-message');
-    var topicEl = document.getElementById('fb-topic');
-    var msg = (msgEl.value || '').trim();
-    var topic = topicEl ? topicEl.value : 'bug';
+    var formElement = document.getElementById('feedback-form');
+    var formData = new FormData(formElement);
 
-    if (!msg) {
-        alert('Lütfen bir mesaj yazın.');
-        return;
-    }
+    // Form içerisindeki veriyi test için konsola basalım
+    console.log('Giden Veri:', Object.fromEntries(formData));
 
-    // Gönder Butonunu geçici olarak devre dışı bırakıp beklediğimizi gösterelim (opsiyonel ama UX için iyi)
-    var btn = e ? e.currentTarget : document.querySelector('button[onclick^="submitFeedback"]');
+    // Gönder Butonunu geçici olarak devre dışı bırakıp beklediğimizi gösterelim
+    var btn = document.getElementById('fb-submit-btn');
     var originalText = '';
     if (btn) {
         originalText = btn.innerHTML;
@@ -72,14 +68,13 @@ function submitFeedback(e) {
         btn.disabled = true;
     }
 
-    // Formspree API Gönderimi
+    // Formspree API Gönderimi (Body olarak formData kullanıyoruz)
     fetch('https://formspree.io/f/xkolylvo', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ konu: topic, mesaj: msg })
+        body: formData
     })
     .then(function(response) {
         if (btn) {
@@ -91,9 +86,8 @@ function submitFeedback(e) {
             // 1. Modalı kapat
             closeFeedback();
 
-            // 2. Temizlik: Inputların içini boşalt
-            if (msgEl) msgEl.value = '';
-            if (topicEl) topicEl.value = 'bug';
+            // 2. Temizlik: Form inputlarını sıfırla
+            formElement.reset();
 
             // 3. Ekrana şık bir Toast alert yazdır
             var toast = document.createElement('div');
