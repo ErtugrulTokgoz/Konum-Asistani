@@ -56,6 +56,7 @@ function submitFeedback(e) {
     var msgEl = document.getElementById('fb-message');
     var topicEl = document.getElementById('fb-topic');
     var msg = (msgEl.value || '').trim();
+    var topic = topicEl ? topicEl.value : 'bug';
 
     if (!msg) {
         alert('Lütfen bir mesaj yazın.');
@@ -71,32 +72,52 @@ function submitFeedback(e) {
         btn.disabled = true;
     }
 
-    // Gönderim Simülasyonu (1 Saniye Bekleme)
-    setTimeout(function() {
+    // Formspree API Gönderimi
+    fetch('https://formspree.io/f/xkolylvo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ konu: topic, mesaj: msg })
+    })
+    .then(function(response) {
         if (btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
 
-        // 1. Modalı kapat
-        closeFeedback();
+        if (response.ok) {
+            // 1. Modalı kapat
+            closeFeedback();
 
-        // 2. Temizlik: Inputların içini boşalt
-        if (msgEl) msgEl.value = '';
-        if (topicEl) topicEl.value = 'bug';
+            // 2. Temizlik: Inputların içini boşalt
+            if (msgEl) msgEl.value = '';
+            if (topicEl) topicEl.value = 'bug';
 
-        // 3. Ekrana şık bir Toast alert yazdır
-        var toast = document.createElement('div');
-        toast.innerText = '✅ Mesajınız başarıyla gönderildi! Geri bildiriminiz için teşekkürler.';
-        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-        document.body.appendChild(toast);
+            // 3. Ekrana şık bir Toast alert yazdır
+            var toast = document.createElement('div');
+            toast.innerText = '✅ Mesajınız başarıyla gönderildi! Geri bildiriminiz için teşekkürler.';
+            toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+            document.body.appendChild(toast);
 
-        // Toast'ı 3 saniye sonra kaldır
-        setTimeout(function() { 
-            if (toast.parentNode) toast.parentNode.removeChild(toast); 
-        }, 3000);
-        
-    }, 1000);
+            // Toast'ı 3 saniye sonra kaldır
+            setTimeout(function() { 
+                if (toast.parentNode) toast.parentNode.removeChild(toast); 
+            }, 3000);
+        } else {
+            console.error('Formspree sunucusu hata döndürdü.');
+            alert('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
+        }
+    })
+    .catch(function(error) {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+        console.error('Ağ hatası:', error);
+        alert('Bir hata oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+    });
 }
 
 
