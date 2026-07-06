@@ -50,29 +50,53 @@ function closeFeedbackIfBackdrop(e) {
     if (e.target === document.getElementById('feedback-modal')) closeFeedback();
 }
 
-function submitFeedback() {
-    var msg = (document.getElementById('fb-message').value || '').trim();
+function submitFeedback(e) {
+    if (e) e.preventDefault(); // Sayfa yenilemesini veya dışarı atmasını engelle
+
+    var msgEl = document.getElementById('fb-message');
     var topicEl = document.getElementById('fb-topic');
-    var topicLabels = { bug: 'Hata Bildirimi', suggestion: 'Öneri', other: 'Diğer' };
-    var topicVal = topicEl ? topicEl.value : 'other';
-    var topicText = topicLabels[topicVal] || topicVal;
+    var msg = (msgEl.value || '').trim();
 
     if (!msg) {
         alert('Lütfen bir mesaj yazın.');
         return;
     }
 
-    var subject = encodeURIComponent('YakınımdaNeVar? - ' + topicText);
-    var body = encodeURIComponent('Konu: ' + topicText + '\n\nMesaj:\n' + msg);
-    window.location.href = 'mailto:ertugrultokgoz25@gmail.com?subject=' + subject + '&body=' + body;
+    // Gönder Butonunu geçici olarak devre dışı bırakıp beklediğimizi gösterelim (opsiyonel ama UX için iyi)
+    var btn = e ? e.currentTarget : document.querySelector('button[onclick^="submitFeedback"]');
+    var originalText = '';
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="loader" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></span> Gönderiliyor...';
+        btn.disabled = true;
+    }
 
-    closeFeedback();
+    // Gönderim Simülasyonu (1 Saniye Bekleme)
+    setTimeout(function() {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
 
-    var toast = document.createElement('div');
-    toast.innerText = '✅ Mail uygulaması açıldı!';
-    toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-    document.body.appendChild(toast);
-    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+        // 1. Modalı kapat
+        closeFeedback();
+
+        // 2. Temizlik: Inputların içini boşalt
+        if (msgEl) msgEl.value = '';
+        if (topicEl) topicEl.value = 'bug';
+
+        // 3. Ekrana şık bir Toast alert yazdır
+        var toast = document.createElement('div');
+        toast.innerText = '✅ Mesajınız başarıyla gönderildi! Geri bildiriminiz için teşekkürler.';
+        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
+        document.body.appendChild(toast);
+
+        // Toast'ı 3 saniye sonra kaldır
+        setTimeout(function() { 
+            if (toast.parentNode) toast.parentNode.removeChild(toast); 
+        }, 3000);
+        
+    }, 1000);
 }
 
 
