@@ -285,9 +285,15 @@ function googlePlacesArama(type) {
     
     var istek = {
         location: konum,
-        rankBy: google.maps.places.RankBy.DISTANCE,
-        keyword: kelime
+        rankBy: google.maps.places.RankBy.DISTANCE
     };
+
+    if (type === 'hair_care') {
+        istek.type = 'hair_care';
+        istek.keyword = 'kuaför OR berber OR güzellik salonu';
+    } else {
+        istek.keyword = kelime;
+    }
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
 
@@ -354,6 +360,7 @@ function fetchPlaces(type, radiusOverride) {
         case 'fuel': q = nwr('["amenity"="fuel"]', r, latF, lngF); break;
         case 'parking': q = nwr('["amenity"="parking"]', r, latF, lngF); break;
         case 'taxi': q = nwr('["amenity"="taxi"]', r, latF, lngF); break;
+        case 'hair_care': q = nwr('["shop"="hairdresser"]', r, latF, lngF); break;
         default: q = nwr('["amenity"="' + type + '"]', r, latF, lngF);
     }
 
@@ -421,7 +428,8 @@ var LABELS = {
     local_food: 'Yerel Lezzetler',
     assembly_point: 'Toplanma Alanları',
     police: 'Polis Merkezi',
-    pharmacy: 'En Yakın Eczaneler'
+    pharmacy: 'En Yakın Eczaneler',
+    hair_care: 'Kuaför & Güzellik'
 };
 
 function openModal(type) {
