@@ -246,7 +246,7 @@ function googlePlacesArama(type) {
     
     var istek = {
         location: konum,
-        radius: 5000,
+        rankBy: google.maps.places.RankBy.DISTANCE,
         keyword: kelime
     };
 
