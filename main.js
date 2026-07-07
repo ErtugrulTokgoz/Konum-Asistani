@@ -1,7 +1,7 @@
 /* ===== YAKИНIMDA NE VAR? - main.js ===== */
 'use strict';
 var googleService = null;
-var API_LIMIT = 9500;
+var API_LIMIT = 5000;
 var aktifApi = 'google';
 
 // --- Global State ---
