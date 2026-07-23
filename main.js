@@ -302,7 +302,8 @@ function googlePlacesArama(type) {
         'police': 'police',
         'pharmacy': 'pharmacy',
         'nobetci_eczane': 'pharmacy',
-        'hair_care': 'hair_care'
+        'hair_care': 'hair_care',
+        'lawyer': 'lawyer'
     };
 
     if (googleTypes[type]) {
@@ -452,6 +453,7 @@ function fetchPlaces(type, radiusOverride) {
         case 'parking': q = nwr('["amenity"="parking"]', r, latF, lngF); break;
         case 'taxi': q = nwr('["amenity"="taxi"]', r, latF, lngF); break;
         case 'hair_care': q = nwr('["shop"="hairdresser"]', r, latF, lngF); break;
+        case 'lawyer': q = nwr('["office"="lawyer"]', r, latF, lngF); break;
         case 'cafe': q = nwr('["amenity"="cafe"]', r, latF, lngF); break;
         default: q = nwr('["amenity"="' + type + '"]', r, latF, lngF);
     }
@@ -522,7 +524,8 @@ var LABELS = {
     assembly_point: 'Toplanma Alanları',
     police: 'Polis Merkezi',
     pharmacy: 'En Yakın Eczaneler',
-    hair_care: 'Kuaför & Güzellik'
+    hair_care: 'Kuaför & Güzellik',
+    lawyer: 'Avukatlık Büroları'
 };
 
 function openModal(type) {
