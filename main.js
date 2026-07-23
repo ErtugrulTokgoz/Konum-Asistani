@@ -364,6 +364,63 @@ function googlePlacesArama(type) {
     }
 }
 
+// --- GOOGLE PLACES ARAMASI (SADECE CAFELER İÇİN ÖZEL) ---
+function googlePlacesAramaCafe() {
+    if (!googleService) {
+        console.warn('Google Service aktif değil, Overpass yedeğine geçiliyor.');
+        fetchPlaces('cafe');
+        return;
+    }
+
+    var konum = new google.maps.LatLng(lat, lng);
+    
+    var istek = {
+        location: konum,
+        rankBy: google.maps.places.RankBy.DISTANCE,
+        type: 'cafe'
+    };
+
+    sayaciArtir();
+
+    try {
+        var zamanAsimi = setTimeout(function() {
+            console.error('Google Maps cevap vermedi (Timeout) -> Overpass Yedeğine Geçiliyor.');
+            fetchPlaces('cafe');
+        }, 5000);
+
+        googleService.nearbySearch(istek, function(sonuclar, durum) {
+            clearTimeout(zamanAsimi);
+            
+            if (durum === google.maps.places.PlacesServiceStatus.OK && sonuclar && sonuclar.length > 0) {
+                var donusturulmus = [];
+                for (var i = 0; i < sonuclar.length; i++) {
+                    var yer = sonuclar[i];
+                    if (!yer.geometry || !yer.geometry.location) continue;
+                    
+                    donusturulmus.push({
+                        lat: yer.geometry.location.lat(),
+                        lon: yer.geometry.location.lng(),
+                        tags: {
+                            name: yer.name
+                        }
+                    });
+                }
+                
+                if (donusturulmus.length > 20) {
+                    donusturulmus = donusturulmus.slice(0, 20);
+                }
+                renderPlaces(donusturulmus, 'cafe', 5000);
+            } else {
+                console.error('[Google Maps Başarısız] Durum Kodu:', durum, '-> Overpass Yedeğine Geçiliyor.');
+                fetchPlaces('cafe');
+            }
+        });
+    } catch(e) {
+        console.error('Google API İsteğinde Hata:', e);
+        fetchPlaces('cafe');
+    }
+}
+
 // --- OVERPASS API (YEDEK SİSTEM) ---
 function nwr(filter, r, la, lo) {
     return 'nwr' + filter + '(around:' + r + ',' + la + ',' + lo + ');';
@@ -392,6 +449,7 @@ function fetchPlaces(type, radiusOverride) {
         case 'parking': q = nwr('["amenity"="parking"]', r, latF, lngF); break;
         case 'taxi': q = nwr('["amenity"="taxi"]', r, latF, lngF); break;
         case 'hair_care': q = nwr('["shop"="hairdresser"]', r, latF, lngF); break;
+        case 'cafe': q = nwr('["amenity"="cafe"]', r, latF, lngF); break;
         default: q = nwr('["amenity"="' + type + '"]', r, latF, lngF);
     }
 
@@ -447,7 +505,8 @@ function fetchPlaces(type, radiusOverride) {
 var LABELS = {
     atm: 'En Yakın ATM',
     hospital: 'En Yakın Hastaneler',
-    restaurant: 'Cafe & Restoranlar',
+    restaurant: 'Restoranlar',
+    cafe: 'Cafeler',
     supermarket: 'En Yakın Marketler',
     fuel: 'En Yakın Benzinlikler',
     clothes: 'Giyim Mağazaları',
@@ -477,7 +536,11 @@ function openModal(type) {
     sayaciKontrolEt();
 
     if (aktifApi === 'google') {
-        googlePlacesArama(type);
+        if (type === 'cafe') {
+            googlePlacesAramaCafe();
+        } else {
+            googlePlacesArama(type);
+        }
     } else {
         fetchPlaces(type);
     }
@@ -628,7 +691,7 @@ function filterButtons(mode) {
     var catBtns = document.querySelectorAll('.cat-btn');
 
     var EMERGENCY_ORDER = ['hospital', 'nobetci_eczane', 'police', 'assembly_point', 'pharmacy'];
-    var TOURIST_PRIORITY = ['tourism', 'local_food', 'hotel', 'restaurant', 'taxi', 'post_office', 'atm', 'pharmacy'];
+    var TOURIST_PRIORITY = ['tourism', 'local_food', 'hotel', 'restaurant', 'cafe', 'taxi', 'post_office', 'atm', 'pharmacy'];
 
     for (var i = 0; i < catBtns.length; i++) {
         var btn = catBtns[i];
