@@ -50,16 +50,42 @@ function closeFeedbackIfBackdrop(e) {
     if (e.target === document.getElementById('feedback-modal')) closeFeedback();
 }
 
+function getOS() {
+    var userAgent = window.navigator.userAgent, platform = window.navigator.platform;
+    var macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'], windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE'], iosPlatforms = ['iPhone', 'iPad', 'iPod'];
+    var os = null;
+    if (macosPlatforms.indexOf(platform) !== -1) { os = 'Mac OS'; }
+    else if (iosPlatforms.indexOf(platform) !== -1) { os = 'iOS'; }
+    else if (windowsPlatforms.indexOf(platform) !== -1) { os = 'Windows'; }
+    else if (/Android/.test(userAgent)) { os = 'Android'; }
+    else if (!os && /Linux/.test(platform)) { os = 'Linux'; }
+    return os || 'Bilinmeyen OS';
+}
+
+function getBrowser() {
+    var ua = navigator.userAgent; var tem, M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+    if(/trident/i.test(M[1])){ tem = /\brv[ :]+(\d+)/g.exec(ua) || []; return 'IE '+(tem[1] || ''); }
+    if(M[1] === 'Chrome'){ tem = ua.match(/\b(OPR|Edge)\/(\d+)/); if(tem != null) return tem.slice(1).join(' ').replace('OPR', 'Opera'); }
+    M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
+    if((tem = ua.match(/version\/(\d+)/i))!= null) M.splice(1, 1, tem[1]);
+    return M.join(' ');
+}
+
 function submitFeedback(e) {
     if (e) e.preventDefault(); // Sayfa yenilemesini veya dışarı atmasını engelle
 
     var formElement = document.getElementById('feedback-form');
     var formData = new FormData(formElement);
 
-    // Form içerisindeki veriyi test için konsola basalım
-    console.log('Giden Veri:', Object.fromEntries(formData));
+    // Otomatik verileri ekle
+    var now = new Date();
+    formData.append('tarih', now.toLocaleDateString('tr-TR'));
+    formData.append('saat', now.toLocaleTimeString('tr-TR'));
+    formData.append('browser', getBrowser());
+    formData.append('os', getOS());
+    formData.append('latitude', window.lat || 'Bilinmiyor');
+    formData.append('longitude', window.lng || 'Bilinmiyor');
 
-    // Gönder Butonunu geçici olarak devre dışı bırakıp beklediğimizi gösterelim
     var btn = document.getElementById('fb-submit-btn');
     var originalText = '';
     if (btn) {
@@ -68,12 +94,10 @@ function submitFeedback(e) {
         btn.disabled = true;
     }
 
-    // Formspree API Gönderimi (Body olarak formData kullanıyoruz)
-    fetch('https://formspree.io/f/xkolylvo', {
+    var scriptURL = 'https://script.google.com/macros/s/AKfycbyAvJb-MEIFt85O9UzBjVE-mgbfSXfhzYtZPAKo7iMYEYMVbkFmbn4Uwh7MWgpoTbY/exec';
+
+    fetch(scriptURL, {
         method: 'POST',
-        headers: {
-            'Accept': 'application/json'
-        },
         body: formData
     })
     .then(function(response) {
@@ -82,27 +106,17 @@ function submitFeedback(e) {
             btn.disabled = false;
         }
 
-        if (response.ok) {
-            // 1. Modalı kapat
-            closeFeedback();
+        closeFeedback();
+        formElement.reset();
 
-            // 2. Temizlik: Form inputlarını sıfırla
-            formElement.reset();
+        var toast = document.createElement('div');
+        toast.innerText = '✅ Mesajınız başarıyla gönderildi.\nGeri bildiriminiz için teşekkür ederiz.';
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);text-align:center;white-space:pre-line;animation:slideUp .3s ease;';
+        document.body.appendChild(toast);
 
-            // 3. Ekrana şık bir Toast alert yazdır
-            var toast = document.createElement('div');
-            toast.innerText = '✅ Mesajınız başarıyla gönderildi! Geri bildiriminiz için teşekkürler.';
-            toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:999px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);';
-            document.body.appendChild(toast);
-
-            // Toast'ı 3 saniye sonra kaldır
-            setTimeout(function() { 
-                if (toast.parentNode) toast.parentNode.removeChild(toast); 
-            }, 3000);
-        } else {
-            console.error('Formspree sunucusu hata döndürdü.');
-            alert('Bir hata oluştu. Lütfen daha sonra tekrar deneyin.');
-        }
+        setTimeout(function() { 
+            if (toast.parentNode) toast.parentNode.removeChild(toast); 
+        }, 4000);
     })
     .catch(function(error) {
         if (btn) {
@@ -110,7 +124,15 @@ function submitFeedback(e) {
             btn.disabled = false;
         }
         console.error('Ağ hatası:', error);
-        alert('Bir hata oluştu. Lütfen internet bağlantınızı kontrol edip tekrar deneyin.');
+        
+        var toast = document.createElement('div');
+        toast.innerText = '❌ Mesaj gönderilemedi.\nLütfen tekrar deneyiniz.';
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:12px 24px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);text-align:center;white-space:pre-line;animation:slideUp .3s ease;';
+        document.body.appendChild(toast);
+
+        setTimeout(function() { 
+            if (toast.parentNode) toast.parentNode.removeChild(toast); 
+        }, 4000);
     });
 }
 
