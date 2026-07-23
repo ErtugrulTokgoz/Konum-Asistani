@@ -321,6 +321,9 @@ function googlePlacesArama(type) {
         istek.keyword = 'toplanma alanı OR park';
     } else if (type === 'hair_care') {
         istek.keyword = 'kuaför OR berber OR güzellik salonu';
+    } else if (type === 'post_office') {
+        delete istek.type;
+        istek.keyword = 'kargo OR kurye OR ptt OR yurtiçi kargo OR aras kargo OR mng kargo OR sürat kargo OR ups OR dhl OR fedex OR hepsijet OR kolay gelsin OR trendyol express OR sendeo OR kargoist OR agt kurye';
     } else if (!googleTypes[type]) {
         // Hiçbir özel ayarı olmayan türler için fallback
         istek.keyword = LABELS[type] || type;
@@ -441,7 +444,7 @@ function fetchPlaces(type, radiusOverride) {
         case 'clothes': q = nwr('["shop"~"clothes|fashion"]', r, latF, lngF); break;
         case 'tourism': q = nwr('["tourism"~"attraction|museum|viewpoint"]', r, latF, lngF); break;
         case 'hotel': q = nwr('["tourism"~"hotel|motel"]', r, latF, lngF); break;
-        case 'post_office': q = nwr('["amenity"="post_office"]', r, latF, lngF); break;
+        case 'post_office': q = nwr('[~"amenity|name"~"post_office|kargo|kurye|ptt|yurtiçi|aras|mng|sürat|hepsijet",i]', r, latF, lngF); break;
         case 'assembly_point': q = nwr('["emergency"="assembly_point"]', r, latF, lngF); break;
         case 'police': q = nwr('["amenity"="police"]', r, latF, lngF); break;
         case 'pharmacy': q = nwr('["amenity"="pharmacy"]', r, latF, lngF); break;
