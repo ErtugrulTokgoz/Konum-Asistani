@@ -77,15 +77,6 @@ function submitFeedback(e) {
     var formElement = document.getElementById('feedback-form');
     var formData = new FormData(formElement);
 
-    // Otomatik verileri ekle
-    var now = new Date();
-    formData.append('tarih', now.toLocaleDateString('tr-TR'));
-    formData.append('saat', now.toLocaleTimeString('tr-TR'));
-    formData.append('browser', getBrowser());
-    formData.append('os', getOS());
-    formData.append('latitude', window.lat || 'Bilinmiyor');
-    formData.append('longitude', window.lng || 'Bilinmiyor');
-
     var btn = document.getElementById('fb-submit-btn');
     var originalText = '';
     if (btn) {
@@ -94,39 +85,68 @@ function submitFeedback(e) {
         btn.disabled = true;
     }
 
-    var scriptURL = 'https://script.google.com/macros/s/AKfycbyAvJb-MEIFt85O9UzBjVE-mgbfSXfhzYtZPAKo7iMYEYMVbkFmbn4Uwh7MWgpoTbY/exec';
+    var now = new Date();
+    var payload = {
+        Kategori: formData.get('konu') || '-',
+        Mesaj: formData.get('mesaj') || '-',
+        Tarih: now.toLocaleDateString('tr-TR'),
+        Saat: now.toLocaleTimeString('tr-TR'),
+        Tarayıcı: getBrowser(),
+        İşletimSistemi: getOS(),
+        Enlem: window.lat || 'Bilinmiyor',
+        Boylam: window.lng || 'Bilinmiyor',
+        _captcha: "false" // Güvenlik (Captcha) sayfasını atlamak için
+    };
 
-    fetch(scriptURL, {
-        method: 'POST',
-        body: formData
+    fetch("https://formsubmit.co/ajax/ertugrultokgoz25@gmail.com", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
     })
     .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
 
-        closeFeedback();
-        formElement.reset();
+        if(data.success) {
+            closeFeedback();
+            formElement.reset();
 
-        var toast = document.createElement('div');
-        toast.innerText = '✅ Mesajınız başarıyla gönderildi.\nGeri bildiriminiz için teşekkür ederiz.';
-        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);text-align:center;white-space:pre-line;animation:slideUp .3s ease;';
-        document.body.appendChild(toast);
+            var toast = document.createElement('div');
+            toast.innerText = '✅ Mesajınız başarıyla iletildi!';
+            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:white;padding:12px 24px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);text-align:center;white-space:pre-line;animation:slideUp .3s ease;';
+            document.body.appendChild(toast);
 
-        setTimeout(function() { 
-            if (toast.parentNode) toast.parentNode.removeChild(toast); 
-        }, 4000);
+            setTimeout(function() { 
+                if (toast.parentNode) toast.parentNode.removeChild(toast); 
+            }, 4000);
+        } else {
+            var toast = document.createElement('div');
+            toast.innerText = '❌ Mesaj gönderilirken bir sorun oluştu.';
+            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:12px 24px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);text-align:center;white-space:pre-line;animation:slideUp .3s ease;';
+            document.body.appendChild(toast);
+
+            setTimeout(function() { 
+                if (toast.parentNode) toast.parentNode.removeChild(toast); 
+            }, 4000);
+        }
     })
     .catch(function(error) {
+        console.error("Hata:", error);
         if (btn) {
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
-        console.error('Ağ hatası:', error);
-        
+
         var toast = document.createElement('div');
-        toast.innerText = '❌ Mesaj gönderilemedi.\nLütfen tekrar deneyiniz.';
+        toast.innerText = '❌ Mesaj gönderilirken bir ağ hatası oluştu.';
         toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:white;padding:12px 24px;border-radius:12px;font-weight:700;font-size:13px;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,.2);text-align:center;white-space:pre-line;animation:slideUp .3s ease;';
         document.body.appendChild(toast);
 
