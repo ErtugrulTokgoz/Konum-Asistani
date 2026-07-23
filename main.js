@@ -350,10 +350,15 @@ function googlePlacesArama(type) {
                     
                     var is_open = null;
                     if (yer.opening_hours) {
-                        if (typeof yer.opening_hours.isOpen === 'function') {
-                            is_open = yer.opening_hours.isOpen();
-                        } else if (typeof yer.opening_hours.open_now === 'boolean') {
-                            is_open = yer.opening_hours.open_now;
+                        try {
+                            if (typeof yer.opening_hours.open_now === 'boolean') {
+                                is_open = yer.opening_hours.open_now;
+                            } else if (typeof yer.opening_hours.isOpen === 'function') {
+                                is_open = yer.opening_hours.isOpen();
+                            }
+                        } catch (err) {
+                            // Google API can throw errors here if full place details are not loaded
+                            is_open = null;
                         }
                     } else if (yer.business_status && (yer.business_status === 'CLOSED_TEMPORARILY' || yer.business_status === 'CLOSED_PERMANENTLY')) {
                         is_open = false;
@@ -416,10 +421,14 @@ function googlePlacesAramaCafe() {
                     
                     var is_open = null;
                     if (yer.opening_hours) {
-                        if (typeof yer.opening_hours.isOpen === 'function') {
-                            is_open = yer.opening_hours.isOpen();
-                        } else if (typeof yer.opening_hours.open_now === 'boolean') {
-                            is_open = yer.opening_hours.open_now;
+                        try {
+                            if (typeof yer.opening_hours.open_now === 'boolean') {
+                                is_open = yer.opening_hours.open_now;
+                            } else if (typeof yer.opening_hours.isOpen === 'function') {
+                                is_open = yer.opening_hours.isOpen();
+                            }
+                        } catch (err) {
+                            is_open = null;
                         }
                     } else if (yer.business_status && (yer.business_status === 'CLOSED_TEMPORARILY' || yer.business_status === 'CLOSED_PERMANENTLY')) {
                         is_open = false;
