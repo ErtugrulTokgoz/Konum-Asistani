@@ -288,36 +288,11 @@ function googlePlacesArama(type) {
         rankBy: google.maps.places.RankBy.DISTANCE
     };
 
-    var googleTypes = {
-        'atm': 'atm',
-        'hospital': 'hospital',
-        'restaurant': 'restaurant',
-        'supermarket': 'supermarket',
-        'fuel': 'gas_station',
-        'clothes': 'clothing_store',
-        'parking': 'parking',
-        'taxi': 'taxi_stand',
-        'tourism': 'tourist_attraction',
-        'hotel': 'lodging',
-        'post_office': 'post_office',
-        'police': 'police',
-        'pharmacy': 'pharmacy',
-        'nobetci_eczane': 'pharmacy',
-        'hair_care': 'hair_care'
-    };
-
-    // İngilizce resmi tipi ayarla
-    if (googleTypes[type]) {
-        istek.type = googleTypes[type];
+    if (type === 'hair_care') {
+        istek.type = 'hair_care';
+        istek.keyword = 'kuaför OR berber OR güzellik salonu';
     } else {
-        // type listesinde olmayan (Örn: assembly_point) kategori ise eski usül arama yap
         istek.keyword = kelime;
-    }
-
-    // Yerel Lezzetler için özel filtre (Restoranlar içinde dönerci vb. ara)
-    if (type === 'local_food') {
-        istek.type = 'restaurant';
-        istek.keyword = 'kebap OR döner OR pide';
     }
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
