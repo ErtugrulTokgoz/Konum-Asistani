@@ -280,6 +280,7 @@ function googlePlacesArama(type) {
         return;
     }
 
+    var kelime = LABELS[type] || type;
     var konum = new google.maps.LatLng(lat, lng);
     
     var istek = {
@@ -287,27 +288,12 @@ function googlePlacesArama(type) {
         rankBy: google.maps.places.RankBy.DISTANCE
     };
 
-    var turkishKeywords = {
-        'supermarket': 'market bakkal tekel büfe süpermarket',
-        'hair_care': 'kuaför berber güzellik salonu',
-        'pharmacy': 'eczane',
-        'nobetci_eczane': 'eczane nöbetçi',
-        'atm': 'atm bankamatik',
-        'hospital': 'hastane poliklinik sağlık ocağı tıp merkezi',
-        'restaurant': 'restoran kafe lokanta',
-        'local_food': 'kebap döner pide lahmacun ev yemekleri',
-        'fuel': 'benzinlik akaryakıt istasyonu',
-        'clothes': 'giyim mağaza butik tuhafiye',
-        'parking': 'otopark',
-        'taxi': 'taksi durağı',
-        'tourism': 'turistik müze ören yeri park',
-        'hotel': 'otel pansiyon konaklama',
-        'post_office': 'kargo ptt postane',
-        'assembly_point': 'toplanma alanı park',
-        'police': 'polis karakol emniyet'
-    };
-
-    istek.keyword = turkishKeywords[type] || (LABELS[type] || type);
+    if (type === 'hair_care') {
+        istek.type = 'hair_care';
+        istek.keyword = 'kuaför OR berber OR güzellik salonu';
+    } else {
+        istek.keyword = kelime;
+    }
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
 
@@ -327,22 +313,9 @@ function googlePlacesArama(type) {
                     var yer = sonuclar[i];
                     if (!yer.geometry || !yer.geometry.location) continue;
                     
-                    var photoUrl = null;
-                    if (yer.photos && yer.photos.length > 0) {
-                        photoUrl = yer.photos[0].getUrl({maxWidth: 100, maxHeight: 100});
-                    }
-
-                    var isOpen = null;
-                    if (yer.opening_hours) {
-                        isOpen = typeof yer.opening_hours.isOpen === 'function' ? yer.opening_hours.isOpen() : yer.opening_hours.open_now;
-                    }
-
                     donusturulmus.push({
                         lat: yer.geometry.location.lat(),
                         lon: yer.geometry.location.lng(),
-                        rating: yer.rating || null,
-                        photo_url: photoUrl,
-                        open_now: isOpen,
                         tags: {
                             name: yer.name
                         }
@@ -565,31 +538,11 @@ function renderPlaces(items, type, currentRadius) {
         var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + item.elat + ',' + item.elon;
         var distStr = formatDist(item.dist);
 
-        html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:12px;">';
-        
-        if (item.el.photo_url) {
-            html += '<img src="' + item.el.photo_url + '" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;">';
-        }
-
-        html += '<div style="flex:1;min-width:0;">' +
-            '<div style="font-weight:700;color:#1f2937;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>';
-            
-        html += '<div style="font-size:11px;color:#6b7280;margin-top:4px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;">' +
-            '<span style="background:#f3f4f6;padding:2px 6px;border-radius:6px;"><i class="fa-solid fa-route" style="margin-right:4px;"></i>' + distStr + '</span>';
-
-        if (item.el.rating) {
-            html += '<span style="background:#fffbeb;color:#d97706;padding:2px 6px;border-radius:6px;font-weight:600;"><i class="fa-solid fa-star" style="margin-right:3px;"></i>' + item.el.rating + '</span>';
-        }
-
-        if (item.el.open_now !== null && item.el.open_now !== undefined) {
-            if (item.el.open_now) {
-                html += '<span style="color:#10b981;font-weight:700;">Açık</span>';
-            } else {
-                html += '<span style="color:#ef4444;font-weight:700;">Kapalı</span>';
-            }
-        }
-
-        html += '</div></div>' +
+        html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+            '<div style="flex:1;min-width:0;">' +
+                '<div style="font-weight:700;color:#1f2937;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
+                '<div style="font-size:11px;color:#6b7280;margin-top:2px;"><i class="fa-solid fa-route" style="margin-right:3px;"></i>' + distStr + '</div>' +
+            '</div>' +
             '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6;color:white;font-size:11px;font-weight:700;padding:8px 12px;border-radius:10px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Yol Tarifi</a>' +
             '</div>';
     }
