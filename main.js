@@ -280,7 +280,6 @@ function googlePlacesArama(type) {
         return;
     }
 
-    var kelime = LABELS[type] || type;
     var konum = new google.maps.LatLng(lat, lng);
     
     var istek = {
@@ -288,11 +287,43 @@ function googlePlacesArama(type) {
         rankBy: google.maps.places.RankBy.DISTANCE
     };
 
-    if (type === 'hair_care') {
-        istek.type = 'hair_care';
+    // Google API resmi tipleri (Mümkün olan en isabetli filtreleme)
+    var googleTypes = {
+        'atm': 'atm',
+        'hospital': 'hospital',
+        'restaurant': 'restaurant',
+        'fuel': 'gas_station',
+        'clothes': 'clothing_store',
+        'parking': 'parking',
+        'taxi': 'taxi_stand',
+        'tourism': 'tourist_attraction',
+        'hotel': 'lodging',
+        'post_office': 'post_office',
+        'police': 'police',
+        'pharmacy': 'pharmacy',
+        'nobetci_eczane': 'pharmacy',
+        'hair_care': 'hair_care'
+    };
+
+    if (googleTypes[type]) {
+        istek.type = googleTypes[type];
+    }
+
+    // Keyword bazlı özel Türkiye ayarlamaları (Genişletilmiş arama)
+    if (type === 'supermarket') {
+        // Market ve Bakkal için type kısıtlamasını kaldır, sadece keyword'e bak (Daha fazla bakkal bulur)
+        delete istek.type;
+        istek.keyword = 'market OR bakkal OR tekel OR süpermarket OR büfe';
+    } else if (type === 'local_food') {
+        istek.type = 'restaurant';
+        istek.keyword = 'kebap OR döner OR pide OR lahmacun OR ev yemekleri';
+    } else if (type === 'assembly_point') {
+        istek.keyword = 'toplanma alanı OR park';
+    } else if (type === 'hair_care') {
         istek.keyword = 'kuaför OR berber OR güzellik salonu';
-    } else {
-        istek.keyword = kelime;
+    } else if (!googleTypes[type]) {
+        // Hiçbir özel ayarı olmayan türler için fallback
+        istek.keyword = LABELS[type] || type;
     }
 
     sayaciArtir(); // Google API çağrıldığında sayacı 1 artır
@@ -517,7 +548,28 @@ function renderPlaces(items, type, currentRadius) {
         return;
     }
 
+    // JS Tarafı Hatalı Filtreleme/Kopya (Duplicate) Temizliği
+    var uniqueIds = {};
+    var uniqueEnriched = [];
+    for (var k = 0; k < enriched.length; k++) {
+        var elObj = enriched[k];
+        var elName = (elObj.el.tags && elObj.el.tags.name) ? elObj.el.tags.name.trim().toLowerCase() : '';
+        // Aynı isim ve birbirine çok yakın (0.001 derece ~ 100m) lokasyonları kopya say
+        var key = elName + '_' + parseFloat(elObj.elat).toFixed(3) + '_' + parseFloat(elObj.elon).toFixed(3);
+        
+        if (!uniqueIds[key]) {
+            uniqueIds[key] = true;
+            uniqueEnriched.push(elObj);
+        }
+    }
+    enriched = uniqueEnriched;
+
     enriched.sort(function(a, b) { return a.dist - b.dist; });
+    
+    // Güvenlik amaçlı listeyi maksimum 20 sonuçla sınırla (Google 20 verse de Overpass çok verebilir)
+    if (enriched.length > 20) {
+        enriched = enriched.slice(0, 20);
+    }
 
     if (type === 'local_food') {
         enriched.sort(function(a, b) {
