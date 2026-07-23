@@ -448,9 +448,6 @@ function googlePlacesAramaCafe() {
                     });
                 }
                 
-                if (donusturulmus.length > 20) {
-                    donusturulmus = donusturulmus.slice(0, 20);
-                }
                 renderPlaces(donusturulmus, 'cafe', 5000);
             } else {
                 console.error('[Google Maps Başarısız] Durum Kodu:', durum, '-> Overpass Yedeğine Geçiliyor.');
@@ -673,22 +670,14 @@ function renderPlaces(items, type, currentRadius) {
     }
     enriched = uniqueEnriched;
 
-    enriched.sort(function(a, b) { return a.dist - b.dist; });
+    enriched.sort(function(a, b) { 
+        if (a.dist === b.dist) return 0;
+        return a.dist - b.dist; 
+    });
     
     // Güvenlik amaçlı listeyi maksimum 20 sonuçla sınırla (Google 20 verse de Overpass çok verebilir)
     if (enriched.length > 20) {
         enriched = enriched.slice(0, 20);
-    }
-
-    if (type === 'local_food') {
-        enriched.sort(function(a, b) {
-            var aN = (a.el.tags && a.el.tags.name) ? a.el.tags.name.toLowerCase() : '';
-            var bN = (b.el.tags && b.el.tags.name) ? b.el.tags.name.toLowerCase() : '';
-            var aP = (aN.indexOf('döner') !== -1 || aN.indexOf('pide') !== -1) ? 0 : 1;
-            var bP = (bN.indexOf('döner') !== -1 || bN.indexOf('pide') !== -1) ? 0 : 1;
-            if (aP !== bP) return aP - bP;
-            return a.dist - b.dist;
-        });
     }
 
     var html = '';
