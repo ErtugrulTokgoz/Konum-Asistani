@@ -348,11 +348,24 @@ function googlePlacesArama(type) {
                     var yer = sonuclar[i];
                     if (!yer.geometry || !yer.geometry.location) continue;
                     
+                    var is_open = null;
+                    if (yer.opening_hours) {
+                        if (typeof yer.opening_hours.isOpen === 'function') {
+                            is_open = yer.opening_hours.isOpen();
+                        } else if (typeof yer.opening_hours.open_now === 'boolean') {
+                            is_open = yer.opening_hours.open_now;
+                        }
+                    } else if (yer.business_status && (yer.business_status === 'CLOSED_TEMPORARILY' || yer.business_status === 'CLOSED_PERMANENTLY')) {
+                        is_open = false;
+                    }
+
                     donusturulmus.push({
                         lat: yer.geometry.location.lat(),
                         lon: yer.geometry.location.lng(),
                         tags: {
-                            name: yer.name
+                            name: yer.name,
+                            rating: yer.rating || null,
+                            is_open: is_open
                         }
                     });
                 }
@@ -401,11 +414,24 @@ function googlePlacesAramaCafe() {
                     var yer = sonuclar[i];
                     if (!yer.geometry || !yer.geometry.location) continue;
                     
+                    var is_open = null;
+                    if (yer.opening_hours) {
+                        if (typeof yer.opening_hours.isOpen === 'function') {
+                            is_open = yer.opening_hours.isOpen();
+                        } else if (typeof yer.opening_hours.open_now === 'boolean') {
+                            is_open = yer.opening_hours.open_now;
+                        }
+                    } else if (yer.business_status && (yer.business_status === 'CLOSED_TEMPORARILY' || yer.business_status === 'CLOSED_PERMANENTLY')) {
+                        is_open = false;
+                    }
+
                     donusturulmus.push({
                         lat: yer.geometry.location.lat(),
                         lon: yer.geometry.location.lng(),
                         tags: {
-                            name: yer.name
+                            name: yer.name,
+                            rating: yer.rating || null,
+                            is_open: is_open
                         }
                     });
                 }
@@ -659,10 +685,25 @@ function renderPlaces(items, type, currentRadius) {
         var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + item.elat + ',' + item.elon;
         var distStr = formatDist(item.dist);
 
+        var ratingHtml = '';
+        if (item.el.tags && item.el.tags.rating) {
+            ratingHtml = '<span style="color:#f59e0b;font-size:12px;font-weight:700;margin-right:10px;"><i class="fa-solid fa-star"></i> ' + item.el.tags.rating + '</span>';
+        }
+
+        var openStatusHtml = '';
+        if (item.el.tags && item.el.tags.is_open !== undefined && item.el.tags.is_open !== null) {
+            if (item.el.tags.is_open) {
+                openStatusHtml = '<span style="color:#10b981;font-size:11px;font-weight:700;">🟢 Açık</span>';
+            } else {
+                openStatusHtml = '<span style="color:#ef4444;font-size:11px;font-weight:700;">🔴 Kapalı</span>';
+            }
+        }
+
         html += '<div style="background:white;border:1px solid #e5e7eb;border-radius:14px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
             '<div style="flex:1;min-width:0;">' +
                 '<div style="font-weight:700;color:#1f2937;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + name + '</div>' +
-                '<div style="font-size:11px;color:#6b7280;margin-top:2px;"><i class="fa-solid fa-route" style="margin-right:3px;"></i>' + distStr + '</div>' +
+                ((ratingHtml || openStatusHtml) ? '<div style="margin-top:5px;display:flex;align-items:center;">' + ratingHtml + openStatusHtml + '</div>' : '') +
+                '<div style="font-size:11px;color:#6b7280;margin-top:5px;"><i class="fa-solid fa-route" style="margin-right:3px;"></i>' + distStr + '</div>' +
             '</div>' +
             '<a href="' + mapsUrl + '" target="_blank" style="background:#3b82f6;color:white;font-size:11px;font-weight:700;padding:8px 12px;border-radius:10px;text-decoration:none;white-space:nowrap;flex-shrink:0;">Yol Tarifi</a>' +
             '</div>';
