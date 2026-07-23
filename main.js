@@ -302,7 +302,8 @@ function googlePlacesArama(type) {
         'police': 'police',
         'pharmacy': 'pharmacy',
         'nobetci_eczane': 'pharmacy',
-        'hair_care': 'hair_care'
+        'hair_care': 'hair_care',
+        'cafe': 'cafe'
     };
 
     if (googleTypes[type]) {
@@ -314,6 +315,11 @@ function googlePlacesArama(type) {
         // Market ve Bakkal için type kısıtlamasını kaldır, sadece keyword'e bak (Daha fazla bakkal bulur)
         delete istek.type;
         istek.keyword = 'market OR bakkal OR tekel OR süpermarket OR büfe';
+    } else if (type === 'cafe') {
+        istek.keyword = 'cafe OR kafe OR kahve OR starbucks OR espresso OR kahve dünyası OR espressolab OR gloria jeans OR caffè nero';
+    } else if (type === 'restaurant') {
+        delete istek.type; // Çiğ köftecileri ve küçük lokantaları kaçırmamak için resmi tipi iptal edip geniş arama yapıyoruz
+        istek.keyword = 'restoran OR fast food OR kebap OR pizza OR burger OR döner OR pide OR steakhouse OR balık restoranı OR ev yemekleri OR lokanta OR çiğ köfte OR cig kofte OR çiğköfte OR etsiz çiğ köfte OR komagene OR oses OR tatlıses çiğ köfte OR battalbey';
     } else if (type === 'local_food') {
         istek.type = 'restaurant';
         istek.keyword = 'kebap OR döner OR pide OR lahmacun OR ev yemekleri';
@@ -378,7 +384,8 @@ function fetchPlaces(type, radiusOverride) {
     switch(type) {
         case 'atm': q = nwr('["amenity"="atm"]', r, latF, lngF); break;
         case 'hospital': q = nwr('["amenity"~"hospital|clinic"]', r, latF, lngF); break;
-        case 'restaurant': q = nwr('[~"amenity|shop"~"restaurant|cafe|fast_food|kiosk|bakery"]', r, latF, lngF); break;
+        case 'restaurant': q = nwr('[~"amenity|shop"~"restaurant|fast_food"]', r, latF, lngF); break;
+        case 'cafe': q = nwr('["amenity"="cafe"]', r, latF, lngF); break;
         case 'local_food': q = nwr('[~"amenity|cuisine|name"~"fast_food|restaurant|kebab|doner|pide|lahmacun|Döner|Kebap|Büfe",i]', r, latF, lngF); break;
         case 'supermarket': q = nwr('["shop"~"supermarket|convenience"]', r, latF, lngF); break;
         case 'clothes': q = nwr('["shop"~"clothes|fashion"]', r, latF, lngF); break;
@@ -447,7 +454,8 @@ function fetchPlaces(type, radiusOverride) {
 var LABELS = {
     atm: 'En Yakın ATM',
     hospital: 'En Yakın Hastaneler',
-    restaurant: 'Cafe & Restoranlar',
+    restaurant: 'En Yakın Restoranlar',
+    cafe: 'En Yakın Cafeler',
     supermarket: 'En Yakın Marketler',
     fuel: 'En Yakın Benzinlikler',
     clothes: 'Giyim Mağazaları',
@@ -628,7 +636,7 @@ function filterButtons(mode) {
     var catBtns = document.querySelectorAll('.cat-btn');
 
     var EMERGENCY_ORDER = ['hospital', 'nobetci_eczane', 'police', 'assembly_point', 'pharmacy'];
-    var TOURIST_PRIORITY = ['tourism', 'local_food', 'hotel', 'restaurant', 'taxi', 'post_office', 'atm', 'pharmacy'];
+    var TOURIST_PRIORITY = ['tourism', 'local_food', 'hotel', 'restaurant', 'cafe', 'taxi', 'post_office', 'atm', 'pharmacy'];
 
     for (var i = 0; i < catBtns.length; i++) {
         var btn = catBtns[i];
